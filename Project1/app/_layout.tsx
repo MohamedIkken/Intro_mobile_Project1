@@ -1,11 +1,17 @@
 import { Stack } from "expo-router";
+import { SessionProvider } from "./SessionContext";
 
 const RootLayout = () => {
   return (
-    <Stack>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="register"/> {/* registratie scherm*/}
-    </Stack>
+
+    <SessionProvider>
+      <Stack>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="register" /> {/* registratie scherm*/}
+        <Stack.Screen name="gamelijst" options={{ headerShown: false }} />
+        <Stack.Screen name="maaksessie" options={{ headerShown: false }} />
+      </Stack>
+    </SessionProvider>
   );
 }
 
