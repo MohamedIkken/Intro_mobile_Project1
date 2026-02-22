@@ -1,25 +1,27 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { router } from "expo-router";
+import { useSessionContext } from "./SessionContext";
 
-const DUMMY_SESSIONS = [
-    { id: "1", game: "Call of Duty", time: "20:00", players: "2/5", level: "Level 3-5" },
-    { id: "2", game: "Rocket League", time: "21:30", players: "1/4", level: "Level 2-4" },
-    { id: "3", game: "Valorant", time: "19:00", players: "3/4", level: "Level 5-7" },
-];
 
 
 export default function GameLijst() {
+    const { sessions } = useSessionContext();
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Beschikbare Games</Text>
 
             <View>
-                {DUMMY_SESSIONS.map((item) => (
+                {sessions.map((item: any) => (
                     <View key={item.id} style={styles.card}>
                         <Text style={styles.gameTitle}>{item.game}</Text>
                         <Text style={styles.details}>{item.time} | Spelers: {item.players} | {item.level}</Text>
                     </View>
                 ))}
             </View>
+
+            <TouchableOpacity style={styles.addButton} onPress={() => router.push("/maaksessie")}>
+                <Text style={styles.addButtonText}>+ Nieuwe Sessie</Text>
+            </TouchableOpacity>
         </View>
     )
 }
@@ -32,7 +34,7 @@ const styles = StyleSheet.create({
         paddingTop: 60,
     },
     title: {
-        fontSize: 26, 
+        fontSize: 26,
         fontWeight: "bold",
         color: "#FFFFFF",
         marginBottom: 20,
@@ -46,13 +48,25 @@ const styles = StyleSheet.create({
         borderColor: "#1E1E35",
     },
     gameTitle: {
-        fontSize: 18, 
-        fontWeight: "bold", 
-        color: "#1B6CF2", 
-        marginBottom: 6, 
+        fontSize: 18,
+        fontWeight: "bold",
+        color: "#1B6CF2",
+        marginBottom: 6,
     },
     details: {
-        fontSize: 14, 
-        color: "#8888AA", 
+        fontSize: 14,
+        color: "#8888AA",
+    },
+    addButton: {
+        backgroundColor: "#1B6CF2",
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 20,
+        alignItems: "center",
+    },
+    addButtonText: {
+        color: "#FFFFFF",
+        fontWeight: "bold",
+        fontSize: 16,
     }
 })
