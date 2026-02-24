@@ -5,7 +5,10 @@ import { useSessionContext } from "./SessionContext";
 
 
 export default function GameLijst() {
-    const { sessions } = useSessionContext();
+    const { sessions, deleteSession } = useSessionContext();
+    const handleDelete = (id: string) => {
+        deleteSession(id);
+    }
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Beschikbare Games</Text>
@@ -15,6 +18,9 @@ export default function GameLijst() {
                     <View key={item.id} style={styles.card}>
                         <Text style={styles.gameTitle}>{item.game}</Text>
                         <Text style={styles.details}>{item.time} | Spelers: {item.players} | {item.level}</Text>
+                        <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item.id)}>
+                            <Text style={styles.deleteButtonText}>Verwijder</Text>
+                        </TouchableOpacity>
                     </View>
                 ))}
             </View>
@@ -68,5 +74,17 @@ const styles = StyleSheet.create({
         color: "#FFFFFF",
         fontWeight: "bold",
         fontSize: 16,
-    }
+    },
+    deleteButton: {
+        backgroundColor: "#E53935",
+        padding: 10,
+        borderRadius: 8,
+        alignItems: "center",
+        marginTop: 12,
+    },
+    deleteButtonText: {
+        color: "#FFFFFF",
+        fontWeight: "bold",
+        fontSize: 14,
+    },
 })

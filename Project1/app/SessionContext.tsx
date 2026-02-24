@@ -11,6 +11,10 @@ export const SessionContext = createContext<any>(null);
 export const SessionProvider = ({ children }: { children: ReactNode }) => {
     const [sessions, setSessions] = useState(DUMMY_SESSIONS);
 
+    const deleteSession = (id: string) => {
+        setSessions(sessions.filter(s => s.id !== id))
+    }
+
     // Functie => Toevoegen van game
     const addSession = (game: string, time: string) => {
         const newSession = {
@@ -24,7 +28,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     }
 
     return (
-        <SessionContext.Provider value={{ sessions, addSession }}>
+        <SessionContext.Provider value={{ sessions, addSession, deleteSession }}>
             {children}
         </SessionContext.Provider>
     )
