@@ -27,8 +27,17 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         setSessions([...sessions, newSession]);
     }
 
+    const getSessionById = (id: string) => {
+        return sessions.find(s => s.id === id);
+    }
+
+
+    const editSession = (id: string, game: string, time: string) => {
+        setSessions(sessions.map(s => s.id === id ? { ...s, game: game, time: time } : s))
+    }
+
     return (
-        <SessionContext.Provider value={{ sessions, addSession, deleteSession }}>
+        <SessionContext.Provider value={{ sessions, addSession, deleteSession, editSession, getSessionById }}>
             {children}
         </SessionContext.Provider>
     )
