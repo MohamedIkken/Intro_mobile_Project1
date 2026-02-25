@@ -4,7 +4,8 @@ const RootLayout = () => {
   return (
     <Stack>
       <Stack.Screen name="index" />
-      <Stack.Screen name="register"/> {/* registratie scherm*/}
+      <Stack.Screen name="register"/>
+      <Stack.Screen name="dashboard"/>
     </Stack>
   );
 }
