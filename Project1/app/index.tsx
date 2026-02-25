@@ -27,7 +27,7 @@ const Index = () => {
       <Text style={styles.label}>Password</Text>
       <TextInput style={styles.textInput} placeholder="••••••••" placeholderTextColor="#444466" secureTextEntry />
 
-      <TouchableOpacity style={styles.primaryButton}>
+      <TouchableOpacity style={styles.primaryButton} onPress={() => router.push("/dashboard")}>
         <Text style={styles.primaryButtonText}>Sign in</Text>
       </TouchableOpacity>
 
