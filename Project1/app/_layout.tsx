@@ -5,9 +5,9 @@ const RootLayout = () => {
   return (
     <SessionProvider>
       <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="register" options={{ headerShown: false }} />
-        <Stack.Screen name="gamelijst" options={{ headerShown: false }} />
+        <Stack.Screen name="index"  options={{ headerShown: false }} />
+        <Stack.Screen name="register"  options={{ headerShown: false }} /> 
+        <Stack.Screen name="mijnsessies" options={{ headerShown: false }} />
         <Stack.Screen name="maaksessie" options={{ headerShown: false }} />
         <Stack.Screen name="dashboard" options={{ headerShown: false }} />
       </Stack>
@@ -15,4 +15,4 @@ const RootLayout = () => {
   );
 }
 
-export default RootLayout;
+export default RootLayout;  
