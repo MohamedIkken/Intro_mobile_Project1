@@ -1,24 +1,33 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { useSessionContext } from "./SessionContext";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function MaakSessie() {
-    const { addSession } = useSessionContext();
+    const { editSession, getSessionById } = useSessionContext();
+    const { id } = useLocalSearchParams(); // hier is het string, goed voor nu maar later moet jij dat wss parsen
+    const sessie = getSessionById(id);
 
     const [game, setGame] = useState("");
     const [time, setTime] = useState("");
 
+    useEffect(() => {
+        if (sessie) {
+            setGame(sessie.game);
+            setTime(sessie.time);
+        }
+    }, [sessie])
+
     const handleOpslaan = () => {
         if (game !== "" && time !== "") {
-            addSession(game, time);
+            editSession(id, game, time);
             navigeerTerug();
         }
     };
 
     const navigeerTerug = () => {
-        router.push("/gamelijst");
+        router.push("/mijnsessies");
     }
 
     return (
@@ -28,12 +37,11 @@ export default function MaakSessie() {
                 <Text style={styles.backButtonText}>Terug</Text>
             </TouchableOpacity>
 
-            <Text style={styles.title}>Nieuwe Sessie Maken</Text>
+            <Text style={styles.title}>Sessie Wijzigen</Text>
 
             <Text style={styles.label}>Welke Game?</Text>
             <TextInput
                 style={styles.input}
-                placeholder="Bv. FIFA 24"
                 placeholderTextColor="#8888AA"
                 value={game}
                 onChangeText={setGame}
@@ -42,7 +50,6 @@ export default function MaakSessie() {
             <Text style={styles.label}>Tijdstip?</Text>
             <TextInput
                 style={styles.input}
-                placeholder="Bv. 20:00"
                 placeholderTextColor="#8888AA"
                 value={time}
                 onChangeText={setTime}
@@ -93,18 +100,18 @@ const styles = StyleSheet.create({
         color: "#FFFFFF",
         fontWeight: "bold",
         fontSize: 16
-    }, 
+    },
     backButton: {
         marginBottom: 20,
         alignSelf: "flex-start",
         paddingVertical: 10,
-        flexDirection: "row", 
-        alignItems: "center", 
+        flexDirection: "row",
+        alignItems: "center",
     },
     backButtonText: {
         color: "#8888AA",
         fontSize: 16,
         fontWeight: "bold",
-        marginLeft: 4, 
+        marginLeft: 4,
     },
 });
