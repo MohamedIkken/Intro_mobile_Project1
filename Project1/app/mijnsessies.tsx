@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import { useSessionContext } from "./SessionContext";
+import Ionicons from "@expo/vector-icons/build/Ionicons";
 
 export default function GameLijst() {
     const { sessions, deleteSession } = useSessionContext();
@@ -9,8 +10,16 @@ export default function GameLijst() {
         deleteSession(id);
     }
 
+    const navigeerTerug = () => {
+        router.push("/dashboard");
+    }
+
     return (
         <View style={styles.container}>
+            <TouchableOpacity style={styles.backButton} onPress={navigeerTerug}>
+                <Ionicons name="chevron-back" size={22} color="#8888AA" />
+                <Text style={styles.backButtonText}>Terug</Text>
+            </TouchableOpacity>
             <Text style={styles.title}>Mijn Games</Text>
 
             <View>
@@ -118,5 +127,18 @@ const styles = StyleSheet.create({
         color: "#FFFFFF",
         fontWeight: "bold",
         fontSize: 16,
+    },
+    backButton: {
+        marginBottom: 20,
+        alignSelf: "flex-start",
+        paddingVertical: 10,
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    backButtonText: {
+        color: "#8888AA",
+        fontSize: 16,
+        fontWeight: "bold",
+        marginLeft: 4,
     },
 });
