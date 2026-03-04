@@ -21,22 +21,26 @@ export default function DashboardScreen() {
         <Text style={styles.logo}>Playnode</Text>
         <Text style={styles.label}>Its gaming time! Lets gooooo!</Text>
 
-        <View style={styles.cirkelRij}>
-          <View style={styles.cirkelContainer}>
-            <TouchableOpacity style={styles.cirkel} onPress={() => router.push("/maaksessie")}/>
-            <Text style={styles.cirkelText}>Aanmaken</Text>
-          </View>
+        <View style={styles.kaartenRij}>
+          <TouchableOpacity style={styles.kaartGroot} onPress={() => router.push("/mijnsessies")}>
+            <Text style={styles.kaartIcon}>🎮</Text>
+            <Text style={styles.kaartTitel}>Aanmaken</Text>
+            <Text style={styles.kaartSub}>Nieuwe sessie starten</Text>
+          </TouchableOpacity>
 
-          <View style={styles.cirkelContainer}>
-            <TouchableOpacity style={styles.cirkel}/>
-            <Text style={styles.cirkelText}>Boeken</Text>
-          </View>
+          <TouchableOpacity style={styles.kaartGroot}>
+            <Text style={styles.kaartIcon}>🖥️</Text>
+            <Text style={styles.kaartTitel}>Boeken</Text>
+            <Text style={styles.kaartSub}>Server reserveren</Text>
+          </TouchableOpacity>
 
-          <View style={styles.cirkelContainer}>
-            <TouchableOpacity style={styles.cirkel}/>
-            <Text style={styles.cirkelText}>Zoeken</Text>
-          </View>
+          <TouchableOpacity style={styles.kaartGroot}>
+            <Text style={styles.kaartIcon}>🔍</Text>
+            <Text style={styles.kaartTitel}>Zoeken</Text>
+            <Text style={styles.kaartSub}>Vind een bestaande sessie</Text>
+          </TouchableOpacity>
         </View>
+
       </ScrollView>
     </View>
   );
@@ -58,52 +62,56 @@ const styles = StyleSheet.create({
     opacity: 0.15,
   },
   scrollContent: {
-    paddingHorizontal: 28,
-    paddingTop: 40,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 40,
   },
   logo: {
-    fontSize: 45,
+    fontSize: 38,
     textAlign: "left",
     fontWeight: "800",
     color: "#FFFFFF",
     letterSpacing: 2,
     fontFamily: "Orbitron_700Bold",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   label: {
-    marginTop: 8,
-    marginBottom: 20,
+    marginTop: 6,
+    marginBottom: 28,
     color: "#8888AA",
     fontSize: 12,
     fontWeight: "600",
     letterSpacing: 1,
     textTransform: "uppercase",
   },
-  cirkelRij: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    gap: 30, 
-    marginBottom: 30,
+  kaartenRij: {
+    flexDirection: "column",
+    gap: 12,
+    gap: 12,
+    marginBottom: 12,
   },
-  cirkelContainer: {
+  kaartGroot: {
+    backgroundColor: "#0F0F1C",
+    borderWidth: 1,
+    borderColor: "#1E1E35",
+    borderRadius: 16,
+    padding: 20,
+    minHeight: 140,
+    justifyContent: "center",
     alignItems: "center",
   },
-  cirkel: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: "#1B6CF2",
-    shadowColor: "#1B6CF2",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
+  kaartIcon: {
+    fontSize: 28,
+    marginBottom: 6,
   },
-  cirkelText: {
+  kaartTitel: {
     color: "#FFFFFF",
+    fontSize: 16,
     fontWeight: "700",
-    textAlign: "center",
-    fontSize: 14,
-    marginTop: 8,
+    marginBottom: 4,
+  },
+  kaartSub: {
+    color: "#8888AA",
+    fontSize: 12,
   },
 });
