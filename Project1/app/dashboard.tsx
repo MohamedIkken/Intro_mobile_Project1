@@ -23,7 +23,7 @@ export default function DashboardScreen() {
 
         <View style={styles.cirkelRij}>
           <View style={styles.cirkelContainer}>
-            <TouchableOpacity style={styles.cirkel}/>
+            <TouchableOpacity style={styles.cirkel} onPress={() => router.push("/maaksessie")}/>
             <Text style={styles.cirkelText}>Aanmaken</Text>
           </View>
 
