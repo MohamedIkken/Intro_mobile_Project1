@@ -18,7 +18,7 @@ export default function MaakSessie() {
     };
 
     const navigeerTerug = () => {
-        router.push("/gamelijst");
+        router.push("/mijnsessies");
     }
 
     return (

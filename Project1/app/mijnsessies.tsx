@@ -11,7 +11,7 @@ export default function GameLijst() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Beschikbare Games</Text>
+            <Text style={styles.title}>Mijn Games</Text>
 
             <View>
                 {sessions.map((item: any) => (

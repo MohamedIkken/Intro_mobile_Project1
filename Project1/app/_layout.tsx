@@ -8,11 +8,11 @@ const RootLayout = () => {
       <Stack>
         <Stack.Screen name="index"  options={{ headerShown: false }} />
         <Stack.Screen name="register"  options={{ headerShown: false }} /> 
-        <Stack.Screen name="gamelijst" options={{ headerShown: false }} />
+        <Stack.Screen name="mijnsessies" options={{ headerShown: false }} />
         <Stack.Screen name="maaksessie" options={{ headerShown: false }} />
       </Stack>
     </SessionProvider>
   );
 }
 
-export default RootLayout;
+export default RootLayout;  
