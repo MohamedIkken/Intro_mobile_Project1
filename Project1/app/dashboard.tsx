@@ -87,7 +87,6 @@ const styles = StyleSheet.create({
   kaartenRij: {
     flexDirection: "column",
     gap: 12,
-    gap: 12,
     marginBottom: 12,
   },
   kaartGroot: {
