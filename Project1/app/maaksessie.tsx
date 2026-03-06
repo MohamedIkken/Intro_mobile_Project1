@@ -4,14 +4,15 @@ import { useSessionContext, Session } from "./SessionContext";
 import { router } from "expo-router";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from "@expo/vector-icons";
+import { ScrollView } from "react-native";
 
 const beschikbareMaps = ["Nuketown", "Rust", "Shipment", "Crash"];
 
 export default function MaakSessie() {
     const { addSession } = useSessionContext();
 
-
     const [mapName, setMapName] = useState("");
+
     const [date, setDate] = useState(new Date());
     const [time, setTime] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -23,13 +24,20 @@ export default function MaakSessie() {
     const [ongeldigeMaxLevel, setOngeldigeMaxLevel] = useState(false);
 
     const [isCompetitive, setIsCompetitive] = useState(false);
+
     const [sessionType, setSessionType] = useState("match");
 
     const handleOpslaan = () => {
+        if (mapName === "" || minLevel === "" || maxLevel === "") {
+            Alert.alert("Fout", "Vul alle velden in.");
+            return;
+        }
+
         if (parseFloat(minLevel) > parseFloat(maxLevel)) {
             Alert.alert("Minimum level kan niet hoger zijn dan maximum level.");
             return;
         }
+
         var nieuweSessieData = {
             mapName,
             date: date.toISOString().split('T')[0], // Opslaan als YYYY-MM-DD, deze is gevaarlijk omdat het tijdzone issues kan geven, en kan 1 dag terug zetten afhankelijk van de tijdzone van de gebruiker
@@ -39,6 +47,7 @@ export default function MaakSessie() {
             isCompetitive,
             sessionType
         };
+
         addSession(nieuweSessieData);
         navigeerTerug();
     };
@@ -62,7 +71,6 @@ export default function MaakSessie() {
     }
 
     const verwerkMaxLevelInput = (input: string) => {
-        // Voeg validatie toe als nodig
         if (input === "" || (parseFloat(input) >= 0.5 && parseFloat(input) <= 7.0)) {
             setOngeldigeMaxLevel(false);
             setMaxLevel(input);
@@ -71,7 +79,6 @@ export default function MaakSessie() {
     }
 
     const verwerkMinLevelInput = (input: string) => {
-        // Voeg validatie toe als nodig
         if (input === "" || (parseFloat(input) >= 0.5 && parseFloat(input) <= 7.0)) {
             setOngeldigeMinLevel(false);
             setMinLevel(input);
@@ -79,85 +86,224 @@ export default function MaakSessie() {
             setOngeldigeMinLevel(true);
     }
 
-    return (
-        <View>
-            <Text>Welke Map (Club):</Text>
-            <Text>Kies een Map:</Text>
-            {beschikbareMaps.map((mapOptie) => (
-                <TouchableOpacity key={mapOptie} onPress={() => setMapName(mapOptie)}>
-                    <Text>{mapOptie} {mapName === mapOptie ? "(Gekozen)" : ""}</Text>
-                </TouchableOpacity>
-            ))}
+    // ... [Je bestaande variabelen en functies blijven exact hetzelfde] ...
 
-            <Text>Datum:</Text>
-            <TouchableOpacity onPress={() => { setShowDatePicker(true) }}>
-                <Text>Gekozen datum: {date.toLocaleDateString()}</Text>
+    return (
+        <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+
+            <TouchableOpacity style={styles.backButton} onPress={navigeerTerug}>
+                <Ionicons name="chevron-back" size={22} color="#8888AA" />
+                <Text style={styles.backButtonText}>Terug</Text>
             </TouchableOpacity>
+
+            <Text style={styles.pageTitle}>Nieuwe Sessie</Text>
+
+            <Text style={styles.sectionTitle}>WELKE MAP (CLUB)</Text>
+            <View style={styles.row}>
+                {beschikbareMaps.map((mapOptie) => (
+                    <TouchableOpacity
+                        key={mapOptie}
+                        style={[styles.choiceButton, mapName === mapOptie && styles.choiceButtonSelected]}
+                        onPress={() => setMapName(mapOptie)}
+                    >
+                        <Text style={[styles.choiceText, mapName === mapOptie && styles.choiceTextSelected]}>
+                            {mapOptie}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+
+            <Text style={styles.sectionTitle}>DATUM & TIJD</Text>
+            <View style={styles.row}>
+                <TouchableOpacity style={styles.inputButton} onPress={() => setShowDatePicker(true)}>
+                    <Text style={styles.inputText}>{date.toLocaleDateString()}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.inputButton} onPress={() => setShowTimePicker(true)}>
+                    <Text style={styles.inputText}>{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                </TouchableOpacity>
+            </View>
 
             {showDatePicker && (
-                <DateTimePicker
-                    value={date}
-                    mode="date"
-                    display="default"
-                    onChange={onChangeDate}
-                />
+                <DateTimePicker value={date} mode="date" display="default" onChange={onChangeDate} />
             )}
-
-            <Text>Tijd:</Text>
-            <TouchableOpacity onPress={() => { setShowTimePicker(true) }}>
-                <Text>Gekozen tijd: {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-            </TouchableOpacity>
-
             {showTimePicker && (
-                <DateTimePicker
-                    value={time}
-                    mode="time"
-                    display="default"
-                    onChange={onChangeTime}
-                />
+                <DateTimePicker value={time} mode="time" display="default" onChange={onChangeTime} />
             )}
 
-            {  /*competitief of vriendschappelijk*/}
-            <Text>Type Wedstrijd:</Text>
-            <TouchableOpacity onPress={() => setIsCompetitive(true)}>
-                <Text>Competitief {isCompetitive ? "(Gekozen)" : ""}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setIsCompetitive(false)}>
-                <Text>Vriendschappelijk {isCompetitive ? "" : "(Gekozen)"}</Text>
+            <Text style={styles.sectionTitle}>TYPE WEDSTRIJD</Text>
+            <View style={styles.row}>
+                <TouchableOpacity
+                    style={[styles.choiceButton, isCompetitive === true && styles.choiceButtonSelected]}
+                    onPress={() => setIsCompetitive(true)}
+                >
+                    <Text style={[styles.choiceText, isCompetitive === true && styles.choiceTextSelected]}>Competitief</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.choiceButton, isCompetitive === false && styles.choiceButtonSelected]}
+                    onPress={() => setIsCompetitive(false)}
+                >
+                    <Text style={[styles.choiceText, isCompetitive === false && styles.choiceTextSelected]}>Vriendschappelijk</Text>
+                </TouchableOpacity>
+            </View>
+
+            <Text style={styles.sectionTitle}>SOORT SESSIE</Text>
+            <View style={styles.row}>
+                <TouchableOpacity
+                    style={[styles.choiceButton, sessionType === "match" && styles.choiceButtonSelected]}
+                    onPress={() => setSessionType("match")}
+                >
+                    <Text style={[styles.choiceText, sessionType === "match" && styles.choiceTextSelected]}>Match (4p)</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.choiceButton, sessionType === "practice" && styles.choiceButtonSelected]}
+                    onPress={() => setSessionType("practice")}
+                >
+                    <Text style={[styles.choiceText, sessionType === "practice" && styles.choiceTextSelected]}>Practice (Privé)</Text>
+                </TouchableOpacity>
+            </View>
+
+            <Text style={styles.sectionTitle}>NIVEAU (0.5 - 7.0)</Text>
+            <View style={styles.row}>
+                <View style={styles.inputWrapper}>
+                    <TextInput
+                        style={styles.textInput}
+                        value={minLevel}
+                        placeholder="Min (bv. 2.0)"
+                        placeholderTextColor="#444455"
+                        keyboardType="numeric"
+                        onChangeText={verwerkMinLevelInput}
+                    />
+                    {ongeldigeMinLevel && <Text style={styles.errorText}>Ongeldig</Text>}
+                </View>
+
+                <View style={styles.inputWrapper}>
+                    <TextInput
+                        style={styles.textInput}
+                        value={maxLevel}
+                        placeholder="Max (bv. 5.0)"
+                        placeholderTextColor="#444455"
+                        keyboardType="numeric"
+                        onChangeText={verwerkMaxLevelInput}
+                    />
+                    {ongeldigeMaxLevel && <Text style={styles.errorText}>Ongeldig</Text>}
+                </View>
+            </View>
+
+            <TouchableOpacity style={styles.primaryButton} onPress={handleOpslaan}>
+                <Text style={styles.primaryButtonText}>Sessie Aanmaken</Text>
             </TouchableOpacity>
 
-            {    /*match of practice*/}
-            <Text>Soort Sessie:</Text>
-            <TouchableOpacity onPress={() => setSessionType("match")}>
-                <Text>Match {sessionType === "match" ? "(Gekozen)" : ""}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setSessionType("practice")}>
-                <Text>Practice {sessionType === "practice" ? "(Gekozen)" : ""}</Text>
-            </TouchableOpacity>
-
-            { /*min en max level*/}
-            <Text>Minimum Level (0.5 - 7.0):</Text>
-            <TextInput
-                value={minLevel}
-                placeholder="Bijv. 2.0"
-                keyboardType="numeric"
-                onChangeText={verwerkMinLevelInput}
-            />
-            {ongeldigeMinLevel && <Text>Ongeldig level. Voer een waarde in tussen 0.5 en 7.0.</Text>}
-
-            <Text>Maximum Level (0.5 - 7.0):</Text>
-            <TextInput
-                value={maxLevel}
-                placeholder="Bijv. 5.0"
-                keyboardType="numeric"
-                onChangeText={verwerkMaxLevelInput}
-            />
-            {ongeldigeMaxLevel && <Text>Ongeldig level. Voer een waarde in tussen 0.5 en 7.0.</Text>}
-        </View>
+        </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
-
-
+    container: {
+        flex: 1,
+        backgroundColor: "#0B0B12", // Donkere Playnode achtergrond
+    },
+    scrollContent: {
+        padding: 20,
+        paddingTop: 40,
+        paddingBottom: 60,
+    },
+    backButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 20,
+    },
+    backButtonText: {
+        color: "#8888AA",
+        fontSize: 16,
+        fontWeight: "bold",
+        marginLeft: 4,
+    },
+    pageTitle: {
+        fontSize: 28,
+        fontWeight: "bold",
+        color: "#FFFFFF",
+        marginBottom: 20,
+    },
+    sectionTitle: {
+        color: "#8888AA",
+        fontSize: 12,
+        fontWeight: "bold",
+        letterSpacing: 1,
+        marginTop: 20,
+        marginBottom: 10,
+    },
+    row: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 10, // Zorgt voor ruimte tussen elementen in een rij
+    },
+    choiceButton: {
+        flex: 1,
+        minWidth: '45%',
+        backgroundColor: "#131320",
+        paddingVertical: 14,
+        paddingHorizontal: 10,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#1E1E30",
+        alignItems: "center",
+    },
+    choiceButtonSelected: {
+        borderColor: "#2E6BFF",
+        backgroundColor: "rgba(46, 107, 255, 0.1)",
+    },
+    choiceText: {
+        color: "#8888AA",
+        fontWeight: "600",
+        fontSize: 14,
+    },
+    choiceTextSelected: {
+        color: "#FFFFFF",
+        fontWeight: "bold",
+    },
+    inputButton: {
+        flex: 1,
+        backgroundColor: "#131320",
+        padding: 15,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#1E1E30",
+        alignItems: "center",
+    },
+    inputText: {
+        color: "#FFFFFF",
+        fontSize: 16,
+    },
+    inputWrapper: {
+        flex: 1,
+    },
+    textInput: {
+        backgroundColor: "#131320",
+        color: "#FFFFFF",
+        padding: 15,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#1E1E30",
+        fontSize: 16,
+    },
+    errorText: {
+        color: "#FF4C4C",
+        fontSize: 12,
+        marginTop: 4,
+        fontWeight: "bold",
+    },
+    primaryButton: {
+        backgroundColor: "#2E6BFF", // Playnode blauw
+        padding: 16,
+        borderRadius: 8,
+        alignItems: "center",
+        marginTop: 40,
+    },
+    primaryButtonText: {
+        color: "#FFFFFF",
+        fontWeight: "bold",
+        fontSize: 16,
+    }
 });
