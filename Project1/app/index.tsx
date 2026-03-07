@@ -2,14 +2,31 @@ import { Text, TextInput, View, StyleSheet, TouchableOpacity, StatusBar } from "
 import { router } from "expo-router";
 import { useFonts, Orbitron_700Bold } from "@expo-google-fonts/orbitron";
 import { ActivityIndicator } from "react-native";
+import { auth } from "../firebaseConfig";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { useState } from "react";
 
 const Index = () => {
   const [fontsLoaded] = useFonts({
     Orbitron_700Bold,
   });
 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
   if (!fontsLoaded) {
     return <ActivityIndicator />;
+  }
+
+  const handleSignIn = async () => {
+    try {
+      setError("");
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+    } catch (err :any) {
+      setError("Invalid email or password");
+      setTimeout(() => setError(""), 3000);
+    }
   }
 
   return (
@@ -22,12 +39,13 @@ const Index = () => {
       <Text style={styles.title}>Sign in</Text>
 
       <Text style={styles.label}>E-mail</Text>
-      <TextInput style={styles.textInput} placeholder="you@example.com" placeholderTextColor="#444466" keyboardType="email-address" autoCapitalize="none" />
+      <TextInput value={email} onChangeText={setEmail} style={styles.textInput} placeholder="you@example.com" placeholderTextColor="#444466" keyboardType="email-address" autoCapitalize="none"/>
 
       <Text style={styles.label}>Password</Text>
-      <TextInput style={styles.textInput} placeholder="••••••••" placeholderTextColor="#444466" secureTextEntry />
+      <TextInput value={password} onChangeText={setPassword} style={styles.textInput} placeholder="••••••••" placeholderTextColor="#444466" secureTextEntry />
+      {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <TouchableOpacity style={styles.primaryButton} onPress={() => router.push("/dashboard")}>
+      <TouchableOpacity style={styles.primaryButton} onPress={handleSignIn}>
         <Text style={styles.primaryButtonText}>Sign in</Text>
       </TouchableOpacity>
 
@@ -125,6 +143,12 @@ const styles = StyleSheet.create({
     color: "#8888AA",
     fontSize: 15,
     fontWeight: "600",
+  },
+  error: {
+    color: "#FF6B6B",
+    fontSize: 14,
+    textAlign: "center",
+    marginTop: 10,
   },
 });
 

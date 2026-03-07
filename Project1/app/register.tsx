@@ -1,7 +1,25 @@
+import { auth } from "@/firebaseConfig";
 import { router } from "expo-router";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, StatusBar } from "react-native";
 
 export default function RegisterScreen() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSignUp = async () => {
+    try {
+      setError("");
+      await createUserWithEmailAndPassword(auth, email.trim(), password);
+    } catch (err :any) {
+      setError("Invalid email or password(min 6 characters)");
+      setTimeout(() => setError(""), 3000);
+    }
+  }
+
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -11,12 +29,14 @@ export default function RegisterScreen() {
       <Text style={styles.title}>Sign up</Text>
 
       <Text style={styles.label}>E-mail</Text>
-      <TextInput style={styles.textInput} placeholder="you@example.com" placeholderTextColor="#444466" keyboardType="email-address" autoCapitalize="none" />
+      <TextInput style={styles.textInput} placeholder="you@example.com" placeholderTextColor="#444466" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
 
       <Text style={styles.label}>Password</Text>
-      <TextInput style={styles.textInput} placeholder="••••••••" placeholderTextColor="#444466" secureTextEntry />
+      <TextInput style={styles.textInput} placeholder="••••••••" placeholderTextColor="#444466" secureTextEntry value={password} onChangeText={setPassword} />
 
-      <TouchableOpacity style={styles.primaryButton} onPress={() => router.push("/dashboard")}>
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+      <TouchableOpacity style={styles.primaryButton} onPress={handleSignUp}>
         <Text style={styles.primaryButtonText}>Sign up</Text>
       </TouchableOpacity>
 
@@ -105,5 +125,10 @@ const styles = StyleSheet.create({
     color: "#8888AA",
     fontSize: 15,
     fontWeight: "600",
+  },
+  errorText: {
+    color: "#FF6B6B",
+    fontSize: 14,
+    marginTop: 8,
   },
 });

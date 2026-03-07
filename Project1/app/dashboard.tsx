@@ -2,11 +2,15 @@ import { View, Text, StyleSheet, TouchableOpacity, StatusBar, ScrollView } from 
 import { router } from "expo-router";
 import { useFonts, Orbitron_700Bold } from "@expo-google-fonts/orbitron";
 import { ActivityIndicator } from "react-native";
+import { signOut } from "firebase/auth";
+import { auth } from "@/firebaseConfig";
+import { useAuth } from "./AuthContext";
 
 export default function DashboardScreen() {
   const [fontsLoaded] = useFonts({
     Orbitron_700Bold,
   });
+  const { user } = useAuth();
 
   if (!fontsLoaded) {
     return <ActivityIndicator />;
@@ -17,8 +21,13 @@ export default function DashboardScreen() {
       <StatusBar barStyle="light-content" />
       <View style={styles.glow} />
 
+      <TouchableOpacity style={styles.logoutButton} onPress={() => signOut(auth)}>
+        <Text style={styles.logoutText}>Logout</Text>
+      </TouchableOpacity>
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.logo}>Playnode</Text>
+        <Text style={styles.welcomeText}>Welcome, {user?.email}!</Text>
         <Text style={styles.label}>Its gaming time! Lets gooooo!</Text>
 
         <View style={styles.kaartenRij}>
@@ -84,6 +93,14 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: "uppercase",
   },
+  welcomeText: {
+    marginTop: 12,
+    marginBottom: 28,
+    color: "#1B6CF2",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
   kaartenRij: {
     flexDirection: "column",
     gap: 12,
@@ -112,5 +129,22 @@ const styles = StyleSheet.create({
   kaartSub: {
     color: "#8888AA",
     fontSize: 12,
+  },
+  logoutButton: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    backgroundColor: "#1E1E35",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#2E2E45",
+  },
+  logoutText: {
+    color: "#8888AA",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
