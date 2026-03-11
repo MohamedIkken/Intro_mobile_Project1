@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { router } from "expo-router";
-import { useSessionContext } from "./SessionContext";
+import { Session, useSessionContext } from "./SessionContext";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 
 export default function GameLijst() {
@@ -15,7 +15,7 @@ export default function GameLijst() {
     }
 
     return (
-        <View style={styles.container}>
+        <ScrollView style={styles.container}>
             <TouchableOpacity style={styles.backButton} onPress={navigeerTerug}>
                 <Ionicons name="chevron-back" size={22} color="#8888AA" />
                 <Text style={styles.backButtonText}>Terug</Text>
@@ -23,22 +23,32 @@ export default function GameLijst() {
             <Text style={styles.title}>Mijn Games</Text>
 
             <View>
-                {sessions.map((item: any) => (
-                    <View key={item.id} style={styles.card}>
-                        <Text style={styles.gameTitle}>{item.game}</Text>
-                        <Text style={styles.details}>{item.time} | Spelers: {item.players} | {item.level}</Text>
+                {sessions.map((session: Session) => (
+                    <View key={session.id} style={styles.card}>
+                        {/* Toon de map en het soort sessie */}
+                        <Text style={styles.gameTitle}>
+                            {session.mapName} ({session.sessionType === 'match' ? 'Match' : 'Practice'})
+                        </Text>
+
+                        {/* Toon datum, tijd, spelersaantal en levels */}
+                        <Text style={styles.details}>
+                            {session.date} om {session.time} | Spelers: {session.players.length}/4
+                        </Text>
+                        <Text style={styles.details}>
+                            Level: {session.minLevel} - {session.maxLevel} | {session.isCompetitive ? 'Competitief' : 'Vriendschappelijk'}
+                        </Text>
 
                         <View style={styles.buttonGroup}>
                             <TouchableOpacity
                                 style={styles.editButton}
-                                onPress={() => router.push({ pathname: "/wijzigsessie", params: { id: item.id } })}
+                                onPress={() => router.push(`/wijzigsessie?id=${session.id}`)}
                             >
                                 <Text style={styles.editButtonText}>Wijzigen</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
                                 style={styles.deleteButton}
-                                onPress={() => handleDelete(item.id)}
+                                onPress={() => handleDelete(session.id)}
                             >
                                 <Text style={styles.deleteButtonText}>Verwijder</Text>
                             </TouchableOpacity>
@@ -50,7 +60,7 @@ export default function GameLijst() {
             <TouchableOpacity style={styles.addButton} onPress={() => router.push("/maaksessie")}>
                 <Text style={styles.addButtonText}>+ Nieuwe Sessie</Text>
             </TouchableOpacity>
-        </View>
+        </ScrollView>
     )
 }
 
