@@ -27,24 +27,21 @@ export default function DashboardScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.logo}>Playnode</Text>
-        <Text style={styles.welcomeText}>Welcome, {user?.email}!</Text>
+        <Text style={styles.welcomeText}>Welcome, {user?.displayName}!</Text>
         <Text style={styles.label}>Its gaming time! Lets gooooo!</Text>
 
         <View style={styles.kaartenRij}>
           <TouchableOpacity style={styles.kaartGroot} onPress={() => router.push("/mijnsessies")}>
-            <Text style={styles.kaartIcon}>🎮</Text>
             <Text style={styles.kaartTitel}>Aanmaken</Text>
             <Text style={styles.kaartSub}>Nieuwe sessie starten</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.kaartGroot}>
-            <Text style={styles.kaartIcon}>🖥️</Text>
             <Text style={styles.kaartTitel}>Boeken</Text>
             <Text style={styles.kaartSub}>Server reserveren</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.kaartGroot}>
-            <Text style={styles.kaartIcon}>🔍</Text>
             <Text style={styles.kaartTitel}>Zoeken</Text>
             <Text style={styles.kaartSub}>Vind een bestaande sessie</Text>
           </TouchableOpacity>

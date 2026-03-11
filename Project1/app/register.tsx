@@ -1,10 +1,11 @@
 import { auth } from "@/firebaseConfig";
 import { router } from "expo-router";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, StatusBar } from "react-native";
 
 export default function RegisterScreen() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -12,7 +13,11 @@ export default function RegisterScreen() {
   const handleSignUp = async () => {
     try {
       setError("");
-      await createUserWithEmailAndPassword(auth, email.trim(), password);
+      const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      // Update the user's display name after successful registration
+      await updateProfile(credential.user, {
+        displayName: name.trim(),
+      });
     } catch (err :any) {
       setError("Invalid email or password(min 6 characters)");
       setTimeout(() => setError(""), 3000);
@@ -27,6 +32,9 @@ export default function RegisterScreen() {
       <View style={styles.glow} />
 
       <Text style={styles.title}>Sign up</Text>
+
+      <Text style={styles.label}>Name</Text>
+      <TextInput style={styles.textInput} placeholder="Your name" placeholderTextColor="#444466" value={name} onChangeText={setName} />
 
       <Text style={styles.label}>E-mail</Text>
       <TextInput style={styles.textInput} placeholder="you@example.com" placeholderTextColor="#444466" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />

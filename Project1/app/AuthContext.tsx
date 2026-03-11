@@ -16,6 +16,7 @@ type AuthProviderProps = {
     children: React.ReactNode;
 }
 
+// Provider component die de auth status bijhoudt en beschikbaar maakt voor de rest van de app
 export const AuthProvider = ({children}: AuthProviderProps) => {
     // Opslaan wie ingelogd is
     const [user, setUser] = useState<User | null>(null);
@@ -25,6 +26,7 @@ export const AuthProvider = ({children}: AuthProviderProps) => {
 
     // Kijken of er een user is die al ingelogd is bij het opstarten van de app
     useEffect(()=>{
+        // Luisteren naar veranderingen in de auth status (inloggen, uitloggen, sessie verlopen)
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             // Opslaan in state
             setUser(currentUser);
