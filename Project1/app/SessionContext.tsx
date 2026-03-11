@@ -90,8 +90,14 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         }));
     };
 
+    const editSession = (id: string, updatedData: Partial<Session>) => {
+        setSessions(sessions.map(sessie =>
+            sessie.id === id ? { ...sessie, ...updatedData } : sessie
+        ));
+    };
+
     return (
-        <SessionContext.Provider value={{ sessions, addSession, deleteSession, getSessionById, joinSession }}>
+        <SessionContext.Provider value={{ sessions, addSession, deleteSession, getSessionById, joinSession, editSession }}>
             {children}
         </SessionContext.Provider>
     );
