@@ -23,6 +23,7 @@ export const AuthProvider = ({children}: AuthProviderProps) => {
     const [loading, setLoading] = useState(true);
     const auth = getAuth();
 
+    // Kijken of er een user is die al ingelogd is bij het opstarten van de app
     useEffect(()=>{
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             // Opslaan in state
@@ -42,6 +43,8 @@ export const AuthProvider = ({children}: AuthProviderProps) => {
         return unsubscribe;
     }, [auth]);
 
+    // Context provider
+    // Alle kinderen kunnen nu de user en loading status gebruiken
     return (
         <AuthContext.Provider value={{user, loading}}>
             {children}
