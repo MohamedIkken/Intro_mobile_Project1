@@ -6,7 +6,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from "@expo/vector-icons";
 import { ScrollView } from "react-native";
 
-const beschikbareMaps = ["Nuketown", "Rust", "Shipment", "Crash"];
+const beschikbareMaps = ["Nuketown", "Rust", "Shipment", "Crash"]; // deze zou je eigenlijk uit je context moeten halen, maar voor nu is dit prima
 
 export default function MaakSessie() {
     const { addSession } = useSessionContext();
@@ -125,10 +125,10 @@ export default function MaakSessie() {
             </View>
 
             {showDatePicker && (
-                <DateTimePicker value={date} mode="date" display="default" onChange={onChangeDate} />
+                <DateTimePicker value={date} mode="date" display="inline" onChange={onChangeDate} />
             )}
             {showTimePicker && (
-                <DateTimePicker value={time} mode="time" display="default" onChange={onChangeTime} />
+                <DateTimePicker value={time} mode="time" display="spinner" onChange={onChangeTime} />
             )}
 
             <Text style={styles.sectionTitle}>TYPE WEDSTRIJD</Text>
