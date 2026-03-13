@@ -39,7 +39,7 @@ const defaultState: boekingState = {
     error: null,
 };
 
-// Creëren van de context met een initiële waarde van null we zullen deze later voorzien in de provider
+// Creëren van de context met een initiële waarde van null
 const BookingContext = createContext<boekingContextValue | null>(null);
 
 // Provider component die de contextwaarde beheert en beschikbaar stelt aan zijn kinderen
@@ -106,7 +106,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         // We zetten de loading status op true en wissen eventuele eerdere fouten
         setState((prev) => ({ ...prev, loading: true, error: null }));
 
-        // Proberen om een boeking te maken met de geselecteerde slotgegevens en de opgegeven userId en doel. We gebruiken de maakBoeking functie uit de boeking service, die controleert op overlappingen en fouten kan gooien als het boeken mislukt (bijvoorbeeld door een conflict).
+        // Proberen om een boeking te maken met de geselecteerde slotgegevens en de opgegeven userId en doel. We gebruiken de maakBoeking functie uit de boeking service, die controleert op overlappingen en fouten kan gooien als het boeken mislukt bijvoorbeeld door een conflict.
         try {
             // We maken een boeking aan met de details van het geselecteerde slot en de opgegeven userId en doel. De status van de boeking wordt ingesteld op "geboekt".
                 await maakBoeking({

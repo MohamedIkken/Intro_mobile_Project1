@@ -66,14 +66,16 @@ export default function boekingService() {
         );
 
         // Luisteren naar realtime updates van deze query en de callback aanroepen met de nieuwe lijst van boekingen
+        // onSnapshot geeft een functie terug waarmee we kunnen unsubscriben van de realtime updates, dit is belangrijk om geheugenlekken te voorkomen als de component unmount
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            // We mappen de Firestore documenten naar ons Boeking type en filteren geannuleerde boekingen eruit
             const boekingen: Boeking[] = snapshot.docs
                 .map((item) => mapToBoeking(item.id, item.data()))
                 .filter((boeking) => boeking.status !== "geannuleerd");
             callback(boekingen);
         });
 
-        return unsubscribe;
+        return unsubscribe; // Zorg dat component kan unsubscriben bij unmount
     };
 
     // Functie om een nieuwe boeking te maken, met controle op overlappingen
@@ -92,17 +94,18 @@ export default function boekingService() {
 
         // Ophalen van bestaande boekingen voor dezelfde server en datum en controleren op overlap
         const bestaandeBoekingenSnap = await getDocs(q);
+        // We controleren of er een bestaande boeking is die overlapt met de nieuwe boeking. Geannuleerde boekingen worden genegeerd.
         const conflict = bestaandeBoekingenSnap.docs.some((item) => {
             const bestaande = mapToBoeking(item.id, item.data());
             if (bestaande.status === "geannuleerd") {
                 return false;
             }
-
+            // We gebruiken de heeftOverlap functie om te checken of de nieuwe boeking overlapt met een bestaande boeking
             return heeftOverlap(booking.startTijd, booking.eindeTijd, bestaande.startTijd, bestaande.eindeTijd);
         });
 
         if (conflict) {
-            throw new Error("Dit tijdslot is net geboekt. Kies een ander tijdstip.");
+            throw new Error("Dit tijdslot is net geboekt. Kies een ander tijdstip."); // Foutmelding als er een conflict is
         }
 
         // Als er geen overlap is, de boeking toevoegen aan Firestore
@@ -121,12 +124,14 @@ export default function boekingService() {
 
     // Functie om een boeking te annuleren door de status bij te werken naar "geannuleerd"
     const annuleerBoeking = (bookingId: string) => {
+        // We werken de status van de boeking bij naar "geannuleerd" en zetten de updatedAt timestamp
         return updateDoc(doc(db, "boekingen", bookingId), {
             status: "geannuleerd",
             updatedAt: serverTimestamp(),
         });
     };
 
+    // We returnen de functies die we in deze service hebben gedefinieerd, zodat andere delen van de app deze kunnen gebruiken
     return {
         maakBoeking,
         annuleerBoeking,
