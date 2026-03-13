@@ -36,7 +36,7 @@ export default function DashboardScreen() {
             <Text style={styles.kaartSub}>Nieuwe sessie starten</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.kaartGroot}>
+          <TouchableOpacity style={styles.kaartGroot} onPress={() => router.push("/boeking/serverBoeken")}>
             <Text style={styles.kaartTitel}>Boeken</Text>
             <Text style={styles.kaartSub}>Server reserveren</Text>
           </TouchableOpacity>
