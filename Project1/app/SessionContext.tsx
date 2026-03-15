@@ -1,4 +1,6 @@
-import { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, arrayUnion } from 'firebase/firestore';
+import { db } from "../firebaseConfig";
 
 // 1. Definieer het datatype (Voorbereiding op Firebase)
 export interface Session {
@@ -12,89 +14,71 @@ export interface Session {
     sessionType: 'match' | 'practice'; // 'match' = open voor 4, 'practice' = privé booking
     players: string[];        // Array met speler-ID's of namen (max 4)
     hostId: string;           // Degene die de match aanmaakte
+    serverKey?: string;     // Alleen relevant voor practice sessies, optioneel veld
 }
-
-// 2. Dummy Data afgestemd op de CoD/Padel regels
-const DUMMY_SESSIONS: Session[] = [
-    {
-        id: "1",
-        mapName: "Nuketown",
-        date: "2026-03-10",
-        time: "20:00",
-        minLevel: 2.0,
-        maxLevel: 4.5,
-        isCompetitive: true,
-        sessionType: 'match',
-        players: ["speler_1", "speler_2"], // Nog 2 plekken vrij
-        hostId: "speler_1"
-    },
-    {
-        id: "2",
-        mapName: "Rust",
-        date: "2026-03-11",
-        time: "19:30",
-        minLevel: 5.0,
-        maxLevel: 7.0,
-        isCompetitive: true,
-        sessionType: 'match',
-        players: ["speler_3", "speler_4", "speler_5", "speler_6"], // Vol (4/4) -> match bevestigd
-        hostId: "speler_3"
-    },
-    {
-        id: "3",
-        mapName: "Shipment",
-        date: "2026-03-12",
-        time: "14:00",
-        minLevel: 1.5,
-        maxLevel: 7.0,
-        isCompetitive: false,
-        sessionType: 'practice',
-        players: ["speler_7"], // Alleen de host, want het is een privé boeking (Punt 2)
-        hostId: "speler_7"
-    }
-];
 
 export const SessionContext = createContext<any>(null);
 
 export const SessionProvider = ({ children }: { children: ReactNode }) => {
-    const [sessions, setSessions] = useState<Session[]>(DUMMY_SESSIONS);
+    const [sessions, setSessions] = useState<Session[]>([]);
+
+    // sessions synchroniseren met Firebase (Realtime updates)
+    useEffect(() => {
+        // wanneer je een nieuwe sessie toevoegt, verwijdert of bijwerkt, zou je deze veranderingen moeten synchroniseren met Firebase. Dit betekent dat je een listener moet instellen die luistert naar veranderingen in de 'sessions' collectie in Firebase. Wanneer er een verandering plaatsvindt (zoals een nieuwe sessie toegevoegd, een sessie verwijderd of bijgewerkt), zou deze listener automatisch de lokale state van 'sessions' moeten bijwerken zodat deze altijd up-to-date is met de gegevens in Firebase. Zonder deze realtime synchronisatie zou je handmatig de state moeten bijwerken na elke bewerking, wat foutgevoelig kan zijn en niet schaalbaar is.
+        const unsubscribe = onSnapshot(collection(db, "sessions"), (snapshot) => {
+            const geladenSessions: Session[] = [];
+            snapshot.forEach((doc) => {
+                geladenSessions.push({ id: doc.id, ...doc.data() } as Session);
+            });
+            setSessions(geladenSessions);
+        });
+
+        return () => unsubscribe();
+    }, []);
 
     // Verwijder sessie
-    const deleteSession = (id: string) => {
-        setSessions(sessions.filter(s => s.id !== id));
+    const deleteSession = async (id: string) => {
+        try {
+            await deleteDoc(doc(db, "sessions", id));
+        } catch (error) {
+            console.error("Fout bij het verwijderen van sessie:", error);
+        }
     };
 
     // Nieuwe sessie aanmaken (zoals in jouw formulier)
-    const addSession = (newSessionData: Omit<Session, 'id' | 'players' | 'hostId'>) => {
-        const newSession: Session = {
-            ...newSessionData,
-            id: Math.random().toString(), // Wordt later een Firebase ID
-            players: ["huidige_gebruiker"], // Host is direct de eerste speler
-            hostId: "huidige_gebruiker"
-        };
-        setSessions([...sessions, newSession]);
+    const addSession = async (newSessionData: Omit<Session, 'id'>) => {
+        try {
+            await addDoc(collection(db, "sessions"), newSessionData);
+        } catch (error) {
+            console.error("Fout bij het aanmaken van sessie:", error);
+        }
     };
 
-    // Haal specifieke sessie op
+    // wijzigen van een sessie
+    const editSession = async (id: string, updatedData: Partial<Session>) => {
+        try{
+            await updateDoc(doc(db, "sessions", id), updatedData);
+        } catch (error) {
+            console.error("Fout bij het bijwerken van sessie:", error);
+        }
+    };
+
+    // Haal specifieke sessie op, hoeft niet async omdat we al realtime updates hebben via onSnapshot, dus de sessies zijn altijd up-to-date in de state
     const getSessionById = (id: string) => {
         return sessions.find(s => s.id === id);
     };
 
-    // Speler toevoegen aan bestaande match (Punt 3 uit de opdracht)
-    const joinSession = (sessionId: string, playerId: string) => {
-        setSessions(sessions.map(s => {
-            if (s.id === sessionId && s.players.length < 4 && s.sessionType === 'match') {
-                return { ...s, players: [...s.players, playerId] };
-            }
-            return s;
-        }));
+    // Speler toevoegen aan bestaande match
+    const joinSession = async (sessionId: string, playerId: string) => {
+        try {
+            await updateDoc(doc(db, "sessions", sessionId), {
+                players: arrayUnion(playerId)
+            });
+        } catch (error) {
+            console.error("Fout bij het toevoegen van speler aan sessie:", error);
+        }
     };
 
-    const editSession = (id: string, updatedData: Partial<Session>) => {
-        setSessions(sessions.map(sessie =>
-            sessie.id === id ? { ...sessie, ...updatedData } : sessie
-        ));
-    };
 
     return (
         <SessionContext.Provider value={{ sessions, addSession, deleteSession, getSessionById, joinSession, editSession }}>

@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { use, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useSessionContext, Session } from "./SessionContext";
 import { router } from "expo-router";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from "@expo/vector-icons";
 import { ScrollView } from "react-native";
+import { auth } from "@/firebaseConfig";
+
+
 
 const beschikbareMaps = ["Nuketown", "Rust", "Shipment", "Crash"]; // deze zou je eigenlijk uit je context moeten halen, maar voor nu is dit prima
 
@@ -26,6 +29,7 @@ export default function MaakSessie() {
     const [isCompetitive, setIsCompetitive] = useState(false);
 
     const [sessionType, setSessionType] = useState("match");
+    const [serverKey, setServerKey] = useState("");
 
     const handleOpslaan = () => {
         if (mapName === "" || minLevel === "" || maxLevel === "") {
@@ -33,19 +37,26 @@ export default function MaakSessie() {
             return;
         }
 
+        if (sessionType === "practice" && serverKey === "") {
+            Alert.alert("Fout", "Een Practice (Privé) sessie heeft een Server Key nodig.");
+            return;
+        }
+
         if (parseFloat(minLevel) > parseFloat(maxLevel)) {
             Alert.alert("Minimum level kan niet hoger zijn dan maximum level.");
             return;
         }
-
         var nieuweSessieData = {
+            hostId: auth.currentUser?.uid || "onbekende_host",
+            players: [auth.currentUser?.uid || "onbekende_host"], // Bij wijzigen gaan we er even van uit dat de host altijd in de sessie blijft, dit is een vereenvoudiging
             mapName,
             date: date.toISOString().split('T')[0], // Opslaan als YYYY-MM-DD, deze is gevaarlijk omdat het tijdzone issues kan geven, en kan 1 dag terug zetten afhankelijk van de tijdzone van de gebruiker
             time: time.toTimeString().split(' ')[0].slice(0, 5), // Opslaan als HH:MM
             minLevel: parseFloat(minLevel),
             maxLevel: parseFloat(maxLevel),
             isCompetitive,
-            sessionType
+            sessionType,
+            serverKey: sessionType === "practice" ? serverKey : undefined, // Alleen opslaan als het een practice sessie is
         };
 
         addSession(nieuweSessieData);
@@ -162,6 +173,19 @@ export default function MaakSessie() {
                     <Text style={[styles.choiceText, sessionType === "practice" && styles.choiceTextSelected]}>Practice (Privé)</Text>
                 </TouchableOpacity>
             </View>
+
+            {sessionType === "practice" && (
+                <View style={{ marginTop: 10 }}>
+                    <Text style={styles.sectionTitle}>SERVER KEY (WACHTWOORD)</Text>
+                    <TextInput
+                        style={styles.textInput}
+                        value={serverKey}
+                        placeholder="Vul de game server code in..."
+                        placeholderTextColor="#444455"
+                        onChangeText={setServerKey}
+                    />
+                </View>
+            )}
 
             <Text style={styles.sectionTitle}>NIVEAU (0.5 - 7.0)</Text>
             <View style={styles.row}>

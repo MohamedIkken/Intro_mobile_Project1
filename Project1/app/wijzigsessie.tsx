@@ -1,12 +1,10 @@
-
-
-
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from "react-native";
 import { useSessionContext, Session } from "./SessionContext";
 import { router, useLocalSearchParams } from "expo-router";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from "@expo/vector-icons";
+import { auth } from "@/firebaseConfig";
 
 const beschikbareMaps = ["Nuketown", "Rust", "Shipment", "Crash"]; // deze zou je eigenlijk uit je context moeten halen, maar voor nu is dit prima
 
@@ -15,6 +13,21 @@ export default function WijzigSessie() {
     const { id } = useLocalSearchParams(); // hier is het string, goed voor nu maar later moet jij dat wss parsen
     const sessie = getSessionById(id);
 
+    const [mapName, setMapName] = useState("");
+
+    const [date, setDate] = useState(new Date());
+    const [time, setTime] = useState(new Date());
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
+
+    const [minLevel, setMinLevel] = useState("");
+    const [maxLevel, setMaxLevel] = useState("");
+    const [ongeldigeMinLevel, setOngeldigeMinLevel] = useState(false);
+    const [ongeldigeMaxLevel, setOngeldigeMaxLevel] = useState(false);
+
+    const [isCompetitive, setIsCompetitive] = useState(false);
+    const [sessionType, setSessionType] = useState("match");
+    const [serverKey, setServerKey] = useState("");
 
     useEffect(() => {
         if (sessie) {
@@ -31,29 +44,14 @@ export default function WijzigSessie() {
         }
     }, [sessie])
 
-
-
-
-
-    const [mapName, setMapName] = useState("");
-
-    const [date, setDate] = useState(new Date());
-    const [time, setTime] = useState(new Date());
-    const [showDatePicker, setShowDatePicker] = useState(false);
-    const [showTimePicker, setShowTimePicker] = useState(false);
-
-    const [minLevel, setMinLevel] = useState("");
-    const [maxLevel, setMaxLevel] = useState("");
-    const [ongeldigeMinLevel, setOngeldigeMinLevel] = useState(false);
-    const [ongeldigeMaxLevel, setOngeldigeMaxLevel] = useState(false);
-
-    const [isCompetitive, setIsCompetitive] = useState(false);
-
-    const [sessionType, setSessionType] = useState("match");
-
     const handleWijzigen = () => {
         if (mapName === "" || minLevel === "" || maxLevel === "") {
             Alert.alert("Fout", "Vul alle velden in.");
+            return;
+        }
+
+        if (sessionType === "practice" && serverKey === "") {
+            Alert.alert("Fout", "Vul de server key in voor een practice sessie.");
             return;
         }
 
@@ -64,14 +62,14 @@ export default function WijzigSessie() {
 
         var nieuweSessieData = {
             mapName,
-            date: date.toISOString().split('T')[0], // Opslaan als YYYY-MM-DD, deze is gevaarlijk omdat het tijdzone issues kan geven, en kan 1 dag terug zetten afhankelijk van de tijdzone van de gebruiker
+            date: date.toISOString().split('T')[0], //Opslaan als YYYY-MM-DD (moet ik nog aanpassen), deze is gevaarlijk omdat het tijdzone issues kan geven, en kan 1 dag terug zetten afhankelijk van de tijdzone van de gebruiker
             time: time.toTimeString().split(' ')[0].slice(0, 5), // Opslaan als HH:MM
             minLevel: parseFloat(minLevel),
             maxLevel: parseFloat(maxLevel),
             isCompetitive,
-            sessionType
+            sessionType,
+            serverKey: sessionType === "practice" ? serverKey : undefined, // Alleen opslaan als het een practice sessie is
         };
-
 
         editSession(id, nieuweSessieData);
         navigeerTerug();
@@ -186,6 +184,19 @@ export default function WijzigSessie() {
                     <Text style={[styles.choiceText, sessionType === "practice" && styles.choiceTextSelected]}>Practice (Privé)</Text>
                 </TouchableOpacity>
             </View>
+
+            {sessionType === "practice" && (
+                <View style={{ marginTop: 10 }}>
+                    <Text style={styles.sectionTitle}>SERVER KEY (WACHTWOORD)</Text>
+                    <TextInput
+                        style={styles.textInput}
+                        value={serverKey}
+                        placeholder="Vul de game server code in..."
+                        placeholderTextColor="#444455"
+                        onChangeText={setServerKey}
+                    />
+                </View>
+            )}
 
             <Text style={styles.sectionTitle}>NIVEAU (0.5 - 7.0)</Text>
             <View style={styles.row}>
