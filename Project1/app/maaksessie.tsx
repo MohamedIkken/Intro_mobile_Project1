@@ -46,7 +46,7 @@ export default function MaakSessie() {
             Alert.alert("Minimum level kan niet hoger zijn dan maximum level.");
             return;
         }
-        var nieuweSessieData = {
+        var nieuweSessieData: any = {
             hostId: auth.currentUser?.uid || "onbekende_host",
             players: [auth.currentUser?.uid || "onbekende_host"], // Bij wijzigen gaan we er even van uit dat de host altijd in de sessie blijft, dit is een vereenvoudiging
             mapName,
@@ -56,8 +56,11 @@ export default function MaakSessie() {
             maxLevel: parseFloat(maxLevel),
             isCompetitive,
             sessionType,
-            serverKey: sessionType === "practice" ? serverKey : undefined, // Alleen opslaan als het een practice sessie is
         };
+
+            if (sessionType === "practice") {
+                nieuweSessieData.serverKey = serverKey;
+            }
 
         addSession(nieuweSessieData);
         navigeerTerug();

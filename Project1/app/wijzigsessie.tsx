@@ -60,7 +60,7 @@ export default function WijzigSessie() {
             return;
         }
 
-        var nieuweSessieData = {
+        var nieuweSessieData: any = {
             mapName,
             date: date.toISOString().split('T')[0], //Opslaan als YYYY-MM-DD (moet ik nog aanpassen), deze is gevaarlijk omdat het tijdzone issues kan geven, en kan 1 dag terug zetten afhankelijk van de tijdzone van de gebruiker
             time: time.toTimeString().split(' ')[0].slice(0, 5), // Opslaan als HH:MM
@@ -68,8 +68,10 @@ export default function WijzigSessie() {
             maxLevel: parseFloat(maxLevel),
             isCompetitive,
             sessionType,
-            serverKey: sessionType === "practice" ? serverKey : undefined, // Alleen opslaan als het een practice sessie is
         };
+        if (sessionType === "practice") {
+            nieuweSessieData.serverKey = serverKey;
+        }
 
         editSession(id, nieuweSessieData);
         navigeerTerug();
