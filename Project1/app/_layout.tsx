@@ -14,7 +14,7 @@ const RootLayout = () => {
             <Stack.Screen name="mijnsessies" options={{ headerShown: false }} />
             <Stack.Screen name="maaksessie" options={{ headerShown: false }} />
             <Stack.Screen name="dashboard" options={{ headerShown: false }} />
-            <Stack.Screen name="serverBoeken" options={{ headerShown: true }} />
+            <Stack.Screen name="boeking/serverBoeken" options={{ headerShown: false }} />
           </Stack>
         </BookingProvider>
       </SessionProvider>
