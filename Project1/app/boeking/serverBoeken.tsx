@@ -11,19 +11,27 @@ import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from '@react-navigation/native';
 
+// Duur opties in minuten
+// Deze worden gebruikt om de beschikbare tijdslots te bepalen en in de UI te tonen
 const DUUR_OPTIES = [30, 60, 90, 120];
 
+// Hulpfuncties om datum en tijd te formatteren voor de Nederlandse locale
 const formatTijd = (d: Date) =>
     d.toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" });
 
+// Formatteer datum als "wo 15 sep"
 const formatDatum = (d: Date) =>
     d.toLocaleDateString("nl-BE", { weekday: "short", day: "numeric", month: "short" });
 
 export default function ServerBoeken() {
+    // Booking context bevat alle logica en state voor het boeken van servers
     const { filters, slots, selectedSlot, loading, error,
             setFilters, searchAvailability, selectSlot, reserveSlot, clearError } = useBooking();
+
+    // Auth context geeft info over de ingelogde gebruiker, nodig voor het maken van een reservatie
     const { user } = useAuth();
 
+    // Lokale state voor zoekterm, datum picker, doel tekst en modals
     const [zoekterm, setZoekterm]         = useState("");
     const [toonDatumPicker, setToonDatumPicker] = useState(false);
     const [doelTekst, setDoelTekst]       = useState("");
@@ -34,6 +42,7 @@ export default function ServerBoeken() {
 
     // Reset bij verlaten scherm
     useFocusEffect(
+        // Gebruik useFocusEffect om filters en zoekterm te resetten wanneer de gebruiker dit scherm verlaat
         React.useCallback(() => {
             return () => {
                 setFilters({ serverNaam: undefined, datum: undefined, duur: 60 });
@@ -45,9 +54,11 @@ export default function ServerBoeken() {
 
     // Fetch servers from Firestore
     useEffect(() => {
+        // Luister realtime naar de "servers" collectie in Firestore, gesorteerd op naam
         const serversRef = collection(db, "servers");
         const q = query(serversRef, orderBy("naam", "asc"));
         
+        // onSnapshot zorgt ervoor dat we realtime updates krijgen als er servers worden toegevoegd, verwijderd of gewijzigd
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const serverList: Server[] = snapshot.docs.map(doc => ({
                 id: doc.id,
@@ -76,24 +87,28 @@ export default function ServerBoeken() {
         return beschikbareSlots.length > 0 ? "Beschikbaar" : "Vol";
     };
 
+    // kies de server die overeenkomt met de geselecteerde servernaam in de filters, dit wordt gebruikt om details van de gekozen server te tonen en te reserveren
     const gekozenServer = servers.find((s: Server) => s.naam === filters.serverNaam);
 
+    // Filter servers op basis van de zoekterm, dit zorgt ervoor dat de lijst dynamisch wordt bijgewerkt terwijl de gebruiker typt
     const gefilterdeServers = servers.filter((s: Server) =>
         s.naam.toLowerCase().includes(zoekterm.toLowerCase())
     );
 
     // Herlaad slots als filters veranderen
     useEffect(() => {
+        // Alleen zoeken als er een servernaam en datum zijn geselecteerd, anders is er geen context om slots te laden
         if (!filters.serverNaam || !filters.datum) return;
         const unsubscribe = searchAvailability();
         return () => unsubscribe?.();
     }, [filters.serverNaam, filters.datum, filters.duur]);
 
+    // Wanneer de gebruiker op "Reserveer slot" klikt in de bevestigingsmodal, wordt deze functie aangeroepen om de reservatie daadwerkelijk te maken
     const handleReserveer = async () => {
-        setBevestigModal(false);
-        await reserveSlot(user?.uid ?? "anoniem", doelTekst || "Geen omschrijving");
-        setGeboektModal(true);
-        setDoelTekst("");
+        setBevestigModal(false);// Sluit de bevestigingsmodal
+        await reserveSlot(user?.uid ?? "anoniem", doelTekst || "Geen omschrijving");// Roep de reserveSlot functie aan uit de booking context, waarbij we de gebruikers-ID en het doel van de reservatie doorgeven
+        setGeboektModal(true);// Open de geboekt modal om te laten zien dat de reservatie succesvol was
+        setDoelTekst("");// Reset de doel tekst voor de volgende reservatie
     };
 
     const navigeerTerug = () => {
@@ -108,7 +123,7 @@ export default function ServerBoeken() {
                 <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
                 <Text style={s.backButtonText}>Terug</Text>
             </TouchableOpacity>
-
+            
             <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
 
                 <View style={s.header}>
@@ -135,11 +150,12 @@ export default function ServerBoeken() {
                             </TouchableOpacity>
                         )}
                     </View>
-
+                    
+                    {/* Als servers nog aan het laden zijn, tonen we een spinner. Anders tonen we de gefilterde lijst van servers. */}
                     {serversLoading ? (
                         <ActivityIndicator color="#2E6BFF" style={{ marginVertical: 20 }} />
                     ) : (
-                        <>
+                        <>  
                             {gefilterdeServers.map((srv: Server) => {
                                 const geselecteerd = filters.serverNaam === srv.naam;
                                 const beschikbaarheid = getServerBeschikbaarheid(srv.naam);
@@ -336,6 +352,8 @@ export default function ServerBoeken() {
     );
 }
 
+// Rij component is een eenvoudige rij in de samenvatting kaart die een label en waarde toont, zoals "Datum" en "wo 15 sep"
+// Dit maakt de samenvatting overzichtelijk en consistent
 function Rij({ label, waarde }: { label: string; waarde: string }) {
     return (
         <View style={s.samenvattingRij}>
