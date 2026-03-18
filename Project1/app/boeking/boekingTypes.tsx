@@ -1,3 +1,9 @@
+export interface Server {
+    id: string;
+    naam: string;
+    specs: string;
+}
+
 export interface Boeking {
     id: string;
     serverNaam: string;
