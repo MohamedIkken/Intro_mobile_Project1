@@ -2,7 +2,6 @@ export interface Server {
     id: string;
     naam: string;
     specs: string;
-    // Geen status - wordt automatisch berekend
 }
 
 export interface Boeking {
