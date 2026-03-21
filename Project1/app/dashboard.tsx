@@ -1,10 +1,18 @@
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  StatusBar,
+  ScrollView,
+} from "react-native";
 import { router } from "expo-router";
 import { useFonts, Orbitron_700Bold } from "@expo-google-fonts/orbitron";
 import { ActivityIndicator } from "react-native";
 import { signOut } from "firebase/auth";
 import { auth } from "@/firebaseConfig";
 import { useAuth } from "./AuthContext";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function DashboardScreen() {
   const [fontsLoaded] = useFonts({
@@ -21,32 +29,76 @@ export default function DashboardScreen() {
       <StatusBar barStyle="light-content" />
       <View style={styles.glow} />
 
-      <TouchableOpacity style={styles.logoutButton} onPress={() => signOut(auth)}>
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
+      {/* Top bar */}
+      <View style={styles.topBar}>
+        <Text style={styles.welcomeText}>{user?.displayName}</Text>
+        <View style={styles.topBarIcons}>
+          <TouchableOpacity style={styles.topBarIconBtn}>
+            <Ionicons name="chatbubble-outline" size={22} color="#8888AA" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.topBarIconBtn}>
+            <Ionicons name="person-outline" size={22} color="#8888AA" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.topBarIconBtn}
+            onPress={() => signOut(auth)}
+          >
+            <Ionicons name="log-out-outline" size={22} color="#8888AA" />
+          </TouchableOpacity>
+        </View>
+      </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.logo}>Playnode</Text>
-        <Text style={styles.welcomeText}>Welcome, {user?.displayName}!</Text>
-        <Text style={styles.label}>Its gaming time! Lets gooooo!</Text>
-
         <View style={styles.kaartenRij}>
-          <TouchableOpacity style={styles.kaartGroot} onPress={() => router.push("/mijnsessies")}>
-            <Text style={styles.kaartTitel}>Aanmaken</Text>
-            <Text style={styles.kaartSub}>Nieuwe sessie starten</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.kaartGroot} onPress={() => router.push("/boeking/serverBoeken")}>
-            <Text style={styles.kaartTitel}>Boeken</Text>
-            <Text style={styles.kaartSub}>Server reserveren</Text>
+          <TouchableOpacity
+            style={styles.kaartGroot}
+            onPress={() => router.push("/mijnsessies")}
+          >
+            <View style={styles.kaartIconWrap}>
+              <Ionicons name="add-circle-outline" size={28} color="#FFFFFF" />
+            </View>
+            <View style={styles.kaartTextWrap}>
+              <Text style={styles.kaartTitel}>Aanmaken</Text>
+              <Text style={styles.kaartSub}>Nieuwe sessie starten</Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.kaartGroot}>
-            <Text style={styles.kaartTitel}>Zoeken</Text>
-            <Text style={styles.kaartSub}>Vind een bestaande sessie</Text>
+            <View style={styles.kaartIconWrap}>
+              <Ionicons name="search-outline" size={28} color="#FFFFFF" />
+            </View>
+            <View style={styles.kaartTextWrap}>
+              <Text style={styles.kaartTitel}>Zoeken</Text>
+              <Text style={styles.kaartSub}>Vind een bestaande sessie</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.kaartGroot}
+            onPress={() => router.push("/boeking/serverBoeken")}
+          >
+            <View style={styles.kaartIconWrap}>
+              <Ionicons name="server-outline" size={28} color="#FFFFFF" />
+            </View>
+            <View style={styles.kaartTextWrap}>
+              <Text style={styles.kaartTitel}>Boeken</Text>
+              <Text style={styles.kaartSub}>Server reserveren</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.kaartGroot}
+            onPress={() => router.push("/boeking/mijnBoekingen")}
+          >
+            <View style={styles.kaartIconWrap}>
+              <Ionicons name="folder-open-outline" size={28} color="#FFFFFF" />
+            </View>
+            <View style={styles.kaartTextWrap}>
+              <Text style={styles.kaartTitel}>Mijn boekingen</Text>
+              <Text style={styles.kaartSub}>Bekijke je boekingen</Text>
+            </View>
           </TouchableOpacity>
         </View>
-
       </ScrollView>
     </View>
   );
@@ -67,19 +119,36 @@ const styles = StyleSheet.create({
     backgroundColor: "#1B6CF2",
     opacity: 0.15,
   },
-  scrollContent: {
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 40,
+    paddingTop: 50,
+    paddingBottom: 12,
+    backgroundColor: "#0F0F1C",
+    borderBottomWidth: 1,
+    borderBottomColor: "#1E1E35",
+  },
+  topBarIcons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  topBarIconBtn: {
+    padding: 4,
   },
   logo: {
-    fontSize: 38,
-    textAlign: "left",
+    fontSize: 22,
     fontWeight: "800",
     color: "#FFFFFF",
     letterSpacing: 2,
     fontFamily: "Orbitron_700Bold",
-    marginBottom: 6,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 40,
   },
   label: {
     marginTop: 6,
@@ -92,7 +161,7 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     marginTop: 12,
-    marginBottom: 28,
+    marginBottom: 4,
     color: "#1B6CF2",
     fontSize: 16,
     fontWeight: "700",
@@ -101,7 +170,6 @@ const styles = StyleSheet.create({
   kaartenRij: {
     flexDirection: "column",
     gap: 12,
-    marginBottom: 12,
   },
   kaartGroot: {
     backgroundColor: "#0F0F1C",
@@ -109,13 +177,20 @@ const styles = StyleSheet.create({
     borderColor: "#1E1E35",
     borderRadius: 16,
     padding: 20,
-    minHeight: 140,
-    justifyContent: "center",
+    flexDirection: "row",
     alignItems: "center",
   },
-  kaartIcon: {
-    fontSize: 28,
-    marginBottom: 6,
+  kaartIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#1E1E35",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  kaartTextWrap: {
+    flex: 1,
   },
   kaartTitel: {
     color: "#FFFFFF",
@@ -126,22 +201,5 @@ const styles = StyleSheet.create({
   kaartSub: {
     color: "#8888AA",
     fontSize: 12,
-  },
-  logoutButton: {
-    position: "absolute",
-    top: 50,
-    right: 20,
-    zIndex: 10,
-    backgroundColor: "#1E1E35",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#2E2E45",
-  },
-  logoutText: {
-    color: "#8888AA",
-    fontSize: 14,
-    fontWeight: "600",
   },
 });
