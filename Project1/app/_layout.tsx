@@ -9,17 +9,24 @@ const RootLayout = () => {
       <SessionProvider>
         <BookingProvider>
           <Stack>
-            <Stack.Screen name="index"  options={{ headerShown: false }} />
-            <Stack.Screen name="register"  options={{ headerShown: false }} /> 
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="register" options={{ headerShown: false }} />
             <Stack.Screen name="mijnsessies" options={{ headerShown: false }} />
             <Stack.Screen name="maaksessie" options={{ headerShown: false }} />
             <Stack.Screen name="dashboard" options={{ headerShown: false }} />
-            <Stack.Screen name="boeking/serverBoeken" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="boeking/serverBoeken"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="boeking/mijnBoekingen"
+              options={{ headerShown: false }}
+            />
           </Stack>
         </BookingProvider>
       </SessionProvider>
     </AuthProvider>
   );
-}
+};
 
-export default RootLayout;  
+export default RootLayout;

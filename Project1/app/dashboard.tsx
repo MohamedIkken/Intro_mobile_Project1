@@ -95,7 +95,7 @@ export default function DashboardScreen() {
             </View>
             <View style={styles.kaartTextWrap}>
               <Text style={styles.kaartTitel}>Mijn boekingen</Text>
-              <Text style={styles.kaartSub}>Bekijke je boekingen</Text>
+              <Text style={styles.kaartSub}>Bekijk je boekingen</Text>
             </View>
           </TouchableOpacity>
         </View>
