@@ -31,12 +31,15 @@ export default function DashboardScreen() {
 
       {/* Top bar */}
       <View style={styles.topBar}>
-        <Text style={styles.welcomeText}>{user?.displayName}</Text>
+        <Text style={styles.logo}>PLAYNODE</Text>
         <View style={styles.topBarIcons}>
           <TouchableOpacity style={styles.topBarIconBtn}>
             <Ionicons name="chatbubble-outline" size={22} color="#8888AA" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.topBarIconBtn}>
+          <TouchableOpacity
+            style={styles.topBarIconBtn}
+            onPress={() => router.push("/profile/profile")}
+          >
             <Ionicons name="person-outline" size={22} color="#8888AA" />
           </TouchableOpacity>
           <TouchableOpacity
@@ -50,6 +53,7 @@ export default function DashboardScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.kaartenRij}>
+          <Text style={styles.welcomeText}>Welcome {user?.displayName}!</Text>
           <TouchableOpacity
             style={styles.kaartGroot}
             onPress={() => router.push("/mijnsessies")}
@@ -95,7 +99,7 @@ export default function DashboardScreen() {
             </View>
             <View style={styles.kaartTextWrap}>
               <Text style={styles.kaartTitel}>Mijn boekingen</Text>
-              <Text style={styles.kaartSub}>Bekijk je boekingen</Text>
+              <Text style={styles.kaartSub}>Bekijke je boekingen</Text>
             </View>
           </TouchableOpacity>
         </View>

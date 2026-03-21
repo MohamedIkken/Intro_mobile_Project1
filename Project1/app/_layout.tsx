@@ -22,6 +22,10 @@ const RootLayout = () => {
               name="boeking/mijnBoekingen"
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="profile/profile"
+              options={{ headerShown: false }}
+            />
           </Stack>
         </BookingProvider>
       </SessionProvider>
