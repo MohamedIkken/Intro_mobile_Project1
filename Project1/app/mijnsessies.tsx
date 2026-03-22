@@ -2,9 +2,11 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-nati
 import { router } from "expo-router";
 import { Session, useSessionContext } from "./SessionContext";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
+import { auth } from "@/firebaseConfig";
 
-export default function GameLijst() {
+export default function MijnSessies() {
     const { sessions, deleteSession } = useSessionContext();
+    const userId = auth.currentUser?.uid;
 
     const handleDelete = (id: string) => {
         deleteSession(id);
@@ -13,6 +15,10 @@ export default function GameLijst() {
     const navigeerTerug = () => {
         router.push("/dashboard");
     }
+
+    //nieuw: filter sessies waar de huidige gebruiker in voorkomt
+    const mijnSessies = sessions.filter((session: Session) => 
+        userId && session.players.includes(userId));
 
     return (
         <ScrollView style={styles.container}>
@@ -23,7 +29,7 @@ export default function GameLijst() {
             <Text style={styles.title}>Mijn Games</Text>
 
             <View>
-                {sessions.map((session: Session) => (
+                {mijnSessies.map((session: Session) => (
                     <View key={session.id} style={styles.card}>
                         {/* Toon de map en het soort sessie */}
                         <Text style={styles.gameTitle}>
