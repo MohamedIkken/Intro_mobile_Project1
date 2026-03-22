@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import { collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, arrayUnion } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from "../firebaseConfig";
 
 // 1. Definieer het datatype (Voorbereiding op Firebase)
@@ -56,7 +56,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
 
     // wijzigen van een sessie
     const editSession = async (id: string, updatedData: Partial<Session>) => {
-        try{
+        try {
             await updateDoc(doc(db, "sessions", id), updatedData);
         } catch (error) {
             console.error("Fout bij het bijwerken van sessie:", error);
@@ -79,9 +79,19 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    // Speler verwijderen uit bestaande match
+    const leaveSession = async (sessionId: string, playerId: string) => {
+        try {
+            await updateDoc(doc(db, "sessions", sessionId), {
+                players: arrayRemove(playerId)
+            });
+        } catch (error) {
+            console.error("Fout bij het verwijderen van speler uit sessie:", error);
+        }
+    };
 
     return (
-        <SessionContext.Provider value={{ sessions, addSession, deleteSession, getSessionById, joinSession, editSession }}>
+        <SessionContext.Provider value={{ sessions, addSession, deleteSession, getSessionById, joinSession, leaveSession, editSession }}>
             {children}
         </SessionContext.Provider>
     );

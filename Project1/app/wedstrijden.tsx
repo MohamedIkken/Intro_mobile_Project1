@@ -13,6 +13,12 @@ export default function Wedstrijden() {
     const [geselecteerdeSessie, setGeselecteerdeSessie] = useState<Session | null>(null);
     const [ingevoerdeKey, setIngevoerdeKey] = useState("");
 
+    // Filter States
+    const [actieveLocatie, setActieveLocatie] = useState<string>("Alles");
+    const [actiefType, setActiefType] = useState<string>("Alles");
+    // Haal dynamisch alle unieke locaties uit de database op
+    const uniekeLocaties = ["Alles", ...Array.from(new Set(sessions.map((s: Session) => s.mapName)))];
+
     const voegSpelerToeAanSessies = (sessionId: string) => {
         if (userId) {
             joinSession(sessionId, userId);
@@ -50,10 +56,25 @@ export default function Wedstrijden() {
         router.push("/dashboard");
     };
 
+    // filter methode: eerst filteren op basis van locatie en type, daarna sorteren op datum en tijd
     const beschikbareSessies = sessions.filter((session: Session) => {
         const zitGebruikerErAlIn = userId ? session.players.includes(userId) : false;
         const isVol = session.players.length >= 4;
-        return !zitGebruikerErAlIn && !isVol;
+
+        // Basis check: filter eigen en volle sessies eruit
+        if (zitGebruikerErAlIn || isVol) return false;
+
+        // Locatie filter
+        if (actieveLocatie !== "Alles" && session.mapName !== actieveLocatie) return false;
+
+        // Type filter
+        if (actiefType === "Competitief" && !session.isCompetitive) return false;
+        if (actiefType === "Vriendschappelijk" && session.isCompetitive) return false;
+
+        return true;
+    }).sort((a: Session, b: Session) => {
+        // Sorteer op datum en tijd
+        return new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime();
     });
 
     return (
@@ -65,7 +86,35 @@ export default function Wedstrijden() {
                 </TouchableOpacity>
 
                 <Text style={styles.title}>Zoek Wedstrijden</Text>
-                <Text style={styles.subtitle}>Vind openstaande games en speel mee</Text>
+
+                {/* Filters Sectie */}
+                <View style={styles.filterSection}>
+                    <Text style={styles.filterLabel}>Type:</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+                        {["Alles", "Competitief", "Vriendschappelijk"].map((type) => (
+                            <TouchableOpacity
+                                key={type}
+                                style={[styles.filterChip, actiefType === type && styles.filterChipActive]}
+                                onPress={() => setActiefType(type)}
+                            >
+                                <Text style={[styles.filterText, actiefType === type && styles.filterTextActive]}>{type}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+
+                    <Text style={styles.filterLabel}>Locatie:</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+                        {uniekeLocaties.map((locatie) => (
+                            <TouchableOpacity
+                                key={locatie as string}
+                                style={[styles.filterChip, actieveLocatie === locatie && styles.filterChipActive]}
+                                onPress={() => setActieveLocatie(locatie as string)}
+                            >
+                                <Text style={[styles.filterText, actieveLocatie === locatie && styles.filterTextActive]}>{locatie as string}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
 
                 <View>
                     {beschikbareSessies.length === 0 ? (
@@ -161,6 +210,41 @@ export default function Wedstrijden() {
 
 
 const styles = StyleSheet.create({
+    filterSection: {
+        marginBottom: 16,
+    },
+    filterLabel: {
+        color: "#8888AA",
+        fontSize: 14,
+        fontWeight: "bold",
+        marginBottom: 8,
+        marginTop: 8,
+    },
+    filterScroll: {
+        flexDirection: "row",
+        marginBottom: 8,
+    },
+    filterChip: {
+        backgroundColor: "#131320",
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        marginRight: 10,
+        borderWidth: 1,
+        borderColor: "#1E1E30",
+    },
+    filterChipActive: {
+        backgroundColor: "#1B6CF2",
+        borderColor: "#1B6CF2",
+    },
+    filterText: {
+        color: "#8888AA",
+        fontSize: 14,
+        fontWeight: "bold",
+    },
+    filterTextActive: {
+        color: "#FFFFFF",
+    },
     container: {
         flex: 1,
         backgroundColor: "#0B0B12",
