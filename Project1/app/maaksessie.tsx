@@ -1,5 +1,5 @@
 import { use, useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Modal, Pressable } from "react-native";
 import { useSessionContext, Session } from "./SessionContext";
 import { router } from "expo-router";
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -31,6 +31,8 @@ export default function MaakSessie() {
     const [sessionType, setSessionType] = useState("match");
     const [serverKey, setServerKey] = useState("");
 
+    const [toonModal, setToonModal] = useState(false);
+
     const handleOpslaan = () => {
         if (mapName === "" || minLevel === "" || maxLevel === "") {
             Alert.alert("Fout", "Vul alle velden in.");
@@ -58,16 +60,17 @@ export default function MaakSessie() {
             sessionType,
         };
 
-            if (sessionType === "practice") {
-                nieuweSessieData.serverKey = serverKey;
-            }
+        if (sessionType === "practice") {
+            nieuweSessieData.serverKey = serverKey;
+        }
 
         addSession(nieuweSessieData);
-        navigeerTerug();
+        setToonModal(true);
     };
 
     const navigeerTerug = () => {
-        router.push("/mijnsessies");
+        setToonModal(false);
+        router.push("/dashboard");
     }
 
     const onChangeDate = (event: any, selectedDate: Date | undefined) => {
@@ -221,11 +224,82 @@ export default function MaakSessie() {
                 <Text style={styles.primaryButtonText}>Sessie Aanmaken</Text>
             </TouchableOpacity>
 
+            <Modal transparent visible={toonModal} animationType="fade">
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalKaart}>
+                        <Text style={styles.modalTitel}>Sessie aangemakt</Text>
+                        <Text style={styles.modalTekst}>Druk op ok om naar dashboard terug te keren</Text>
+                        <View style={styles.modalKnoppen}>
+                            <Pressable
+                                style={styles.modalAnnuleer}
+                                onPress={navigeerTerug}
+                            >
+                                <Text style={styles.modalAnnuleerTekst}>Ok</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.85)",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    modalKaart: {
+        backgroundColor: "#131320",
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#1E1E30",
+        padding: 24,
+        width: "85%",
+        alignItems: "center",
+    },
+    modalTitel: {
+        fontSize: 18,
+        fontWeight: "bold",
+        color: "#FFFFFF",
+        marginBottom: 8,
+    },
+    modalTekst: {
+        fontSize: 13,
+        color: "#8888AA",
+        textAlign: "center",
+        marginBottom: 24,
+    },
+    modalKnoppen: {
+        flexDirection: "row",
+        gap: 10,
+        width: "100%",
+    },
+    modalAnnuleer: {
+        flex: 1,
+        paddingVertical: 13,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#1E1E30",
+        alignItems: "center",
+    },
+    modalAnnuleerTekst: {
+        color: "#8888AA",
+        fontWeight: "600",
+    },
+    modalBevestig: {
+        flex: 1,
+        paddingVertical: 13,
+        borderRadius: 8,
+        backgroundColor: "#2E6BFF",
+        alignItems: "center",
+    },
+    modalBevestigTekst: {
+        color: "#FFFFFF",
+        fontWeight: "bold",
+    },
     container: {
         flex: 1,
         backgroundColor: "#0B0B12", // Donkere Playnode achtergrond

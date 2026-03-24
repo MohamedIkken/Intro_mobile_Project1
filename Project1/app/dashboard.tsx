@@ -56,7 +56,7 @@ export default function DashboardScreen() {
           <Text style={styles.welcomeText}>Welcome {user?.displayName}!</Text>
           <TouchableOpacity
             style={styles.kaartGroot}
-            onPress={() => router.push("/mijnsessies")}
+            onPress={() => router.push("/maaksessie")}
           >
             <View style={styles.kaartIconWrap}>
               <Ionicons name="add-circle-outline" size={28} color="#FFFFFF" />
@@ -67,7 +67,9 @@ export default function DashboardScreen() {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.kaartGroot}>
+          <TouchableOpacity style={styles.kaartGroot}
+            onPress={() => router.push("/wedstrijden")}
+          >
             <View style={styles.kaartIconWrap}>
               <Ionicons name="search-outline" size={28} color="#FFFFFF" />
             </View>
@@ -100,6 +102,19 @@ export default function DashboardScreen() {
             <View style={styles.kaartTextWrap}>
               <Text style={styles.kaartTitel}>Mijn boekingen</Text>
               <Text style={styles.kaartSub}>Bekijke je boekingen</Text>
+            </View>
+          </TouchableOpacity>
+
+           <TouchableOpacity
+            style={styles.kaartGroot}
+            onPress={() => router.push("/mijnsessies")}
+          >
+            <View style={styles.kaartIconWrap}>
+              <Ionicons name="folder-open-outline" size={28} color="#FFFFFF" />
+            </View>
+            <View style={styles.kaartTextWrap}>
+              <Text style={styles.kaartTitel}>Mijn sessies</Text>
+              <Text style={styles.kaartSub}>Bekijke je gejoind sessies</Text>
             </View>
           </TouchableOpacity>
         </View>

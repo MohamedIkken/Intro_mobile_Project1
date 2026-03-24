@@ -1,43 +1,60 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, Pressable } from "react-native";
 import { router } from "expo-router";
 import { Session, useSessionContext } from "./SessionContext";
-import Ionicons from "@expo/vector-icons/build/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 import { auth } from "@/firebaseConfig";
+import { useState } from "react";
 
 export default function MijnSessies() {
     const { sessions, deleteSession, leaveSession } = useSessionContext();
     const userId = auth.currentUser?.uid;
 
+    const [modalConfig, setModalConfig] = useState({
+        zichtbaar: false,
+        type: "",
+        sessionId: "",
+        titel: "",
+        tekst: "",
+        knopTeskt: "",
+    })
+
+    const sluitModal = () => {
+        setModalConfig({ ...modalConfig, zichtbaar: false });
+    };
+
     const handleVerlaat = (id: string) => {
         if (!userId) return;
 
-        Alert.alert(
-            "Match Verlaten",
-            "Weet je zeker dat je deze wedstrijd wilt verlaten?",
-            [
-                { text: "Annuleren", style: "cancel" },
-                {
-                    text: "Verlaten",
-                    style: "destructive",
-                    onPress: () => leaveSession(id, userId)
-                }
-            ]
-        );
+        setModalConfig({
+            zichtbaar: true,
+            type: "verlaat",
+            sessionId: id,
+            titel: "Wedstrijd Verlaten",
+            tekst: "Weet je zeker dat je deze wedstrijd wilt verlaten?",
+            knopTeskt: "Verlaten",
+        });
     }
 
     const handleDelete = (id: string) => {
-        Alert.alert(
-            "Sessie Verwijderen",
-            "Weet je zeker dat je deze sessie definitief wilt verwijderen?",
-            [
-                { text: "Annuleren", style: "cancel" },
-                {
-                    text: "Verwijder",
-                    style: "destructive",
-                    onPress: () => deleteSession(id)
-                }
-            ]
-        );
+        if (!userId) return;
+
+        setModalConfig({
+            zichtbaar: true,
+            type: "verwijder",
+            sessionId: id,
+            titel: "Wedstrijd Verwijderen",
+            tekst: "Weet je zeker dat je deze wedstrijd defenitief wilt verwijderen?",
+            knopTeskt: "Verwijderen",
+        });
+    }
+
+    const handleBevestigModal = () => {
+        if (modalConfig.type === "verlaat") {
+            leaveSession(modalConfig.sessionId, userId);
+        } else if (modalConfig.type === "verwijder") {
+            deleteSession(modalConfig.sessionId);
+        }
+        sluitModal();
     }
 
     const navigeerTerug = () => {
@@ -45,7 +62,7 @@ export default function MijnSessies() {
     }
 
     const mijnSessies = sessions.filter((session: Session) =>
-        userId && session.players.includes(userId)
+        userId && session.players?.includes(userId)
     );
 
     return (
@@ -55,7 +72,7 @@ export default function MijnSessies() {
                     <Ionicons name="chevron-back" size={22} color="#8888AA" />
                     <Text style={styles.backButtonText}>Terug</Text>
                 </TouchableOpacity>
-                
+
                 <Text style={styles.title}>Mijn Games</Text>
                 <Text style={styles.subtitle}>Je geplande en aangemaakte sessies</Text>
 
@@ -65,7 +82,7 @@ export default function MijnSessies() {
                     ) : (
                         mijnSessies.map((session: Session) => (
                             <View key={session.id} style={styles.card}>
-                                
+
                                 {/* Header: Map & Badges */}
                                 <View style={styles.cardHeader}>
                                     <Text style={styles.gameTitle}>{session.mapName}</Text>
@@ -81,7 +98,7 @@ export default function MijnSessies() {
                                             </View>
                                         )}
                                         {session.hostId === userId && (
-                                             <View style={styles.badgeHost}>
+                                            <View style={styles.badgeHost}>
                                                 <Text style={styles.badgeTextHost}>Host</Text>
                                             </View>
                                         )}
@@ -103,7 +120,7 @@ export default function MijnSessies() {
 
                                 <View style={styles.detailRow}>
                                     <Ionicons name="people-outline" size={16} color="#8888AA" />
-                                    <Text style={styles.detailText}>Spelers: {session.players.length} / 4</Text>
+                                    <Text style={styles.detailText}>Spelers: {session.players?.length || 0} / 4</Text>
                                 </View>
 
                                 {/* Actie Knoppen */}
@@ -136,8 +153,31 @@ export default function MijnSessies() {
                     )}
                 </View>
 
+                <Modal transparent visible={modalConfig.zichtbaar} animationType="fade">
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalKaart}>
+                            <Text style={styles.modalTitel}>{modalConfig.titel}</Text>
+                            <Text style={styles.modalTekst}>{modalConfig.tekst}</Text>
+                            <View style={styles.modalKnoppen}>
+                                <Pressable
+                                    style={styles.modalAnnuleer}
+                                    onPress={sluitModal}
+                                >
+                                    <Text style={styles.modalAnnuleerTekst}>Annuleer</Text>
+                                </Pressable>
+                                <Pressable
+                                    style={[styles.modalBevestig, { backgroundColor: "#E53E3E" }]}
+                                    onPress={handleBevestigModal}
+                                >
+                                    <Text style={styles.modalBevestigTekst}>{modalConfig.knopTeskt}</Text>
+                                </Pressable>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+
                 <TouchableOpacity style={styles.addButton} onPress={() => router.push("/maaksessie")}>
-                    <Text style={styles.addButtonText}>+ Nieuwe Sessie</Text>
+                    <Text style={styles.addButtonText}>Nieuwe Sessie</Text>
                 </TouchableOpacity>
             </ScrollView>
         </View>
@@ -145,6 +185,61 @@ export default function MijnSessies() {
 }
 
 const styles = StyleSheet.create({
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.85)",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    modalKaart: {
+        backgroundColor: "#131320",
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#1E1E30",
+        padding: 24,
+        width: "85%",
+        alignItems: "center",
+    },
+    modalTitel: {
+        fontSize: 18,
+        fontWeight: "bold",
+        color: "#FFFFFF",
+        marginBottom: 8,
+    },
+    modalTekst: {
+        fontSize: 13,
+        color: "#8888AA",
+        textAlign: "center",
+        marginBottom: 24,
+    },
+    modalKnoppen: {
+        flexDirection: "row",
+        gap: 10,
+        width: "100%",
+    },
+    modalAnnuleer: {
+        flex: 1,
+        paddingVertical: 13,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#1E1E30",
+        alignItems: "center",
+    },
+    modalAnnuleerTekst: {
+        color: "#8888AA",
+        fontWeight: "600",
+    },
+    modalBevestig: {
+        flex: 1,
+        paddingVertical: 13,
+        borderRadius: 8,
+        backgroundColor: "#2E6BFF",
+        alignItems: "center",
+    },
+    modalBevestigTekst: {
+        color: "#FFFFFF",
+        fontWeight: "bold",
+    },
     container: {
         flex: 1,
         backgroundColor: "#0B0B12",
