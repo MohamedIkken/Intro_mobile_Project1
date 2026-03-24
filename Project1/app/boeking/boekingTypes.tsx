@@ -1,22 +1,28 @@
+export interface Server {
+  id: string;
+  naam: string;
+  specs: string;
+}
+
 export interface Boeking {
-    id: string;
-    serverNaam: string;
-    userId: string;
-    startTijd: Date;
-    eindeTijd: Date;
-    doel: string;
-    status: "geboekt" | "geannuleerd" | "afgerond";
+  id: string;
+  serverNaam: string;
+  userId: string;
+  startTijd: Date;
+  eindeTijd: Date;
+  doel: string;
+  status: "geboekt" | "geannuleerd" | "afgerond";
 }
 
 export interface Slot {
-    id: string;
-    startTijd: Date;
-    eindeTijd: Date;
-    beschikbaarheid: "beschikbaar" | "bezet";
+  id: string;
+  startTijd: Date;
+  eindeTijd: Date;
+  beschikbaarheid: "beschikbaar" | "bezet" | "voorbij";
 }
 
 export interface zoekFilters {
-    serverNaam?: string;
-    datum?: Date;
-    duur?: number;
+  serverNaam?: string;
+  datum?: Date;
+  duur?: number;
 }
