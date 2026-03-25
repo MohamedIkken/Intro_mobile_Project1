@@ -15,6 +15,10 @@ export interface Session {
     players: string[];        // Array met speler-ID's of namen (max 4)
     hostId: string;           // Degene die de match aanmaakte
     serverKey?: string;     // Alleen relevant voor practice sessies, optioneel veld
+    status?: 'open' | 'voltooid';
+    score?: string;
+    teamA?: string[]; // Alleen relevant voor competitieve matches, optioneel veld 
+    teamB?: string[]; // Alleen relevant voor competitieve matches, optioneel veld
 }
 
 export const SessionContext = createContext<any>(null);
@@ -69,11 +73,16 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     };
 
     // Speler toevoegen aan bestaande match
-    const joinSession = async (sessionId: string, playerId: string) => {
+    const joinSession = async (sessionId: string, playerId: string, team?: 'A' | 'B') => {
         try {
-            await updateDoc(doc(db, "sessions", sessionId), {
+            const updatedData: any = {
                 players: arrayUnion(playerId)
-            });
+            };
+            
+            if (team) team === 'A' ? updatedData.teamA = arrayUnion(playerId) : updatedData.teamB = arrayUnion(playerId);
+
+            await updateDoc(doc(db, "sessions", sessionId), updatedData);
+
         } catch (error) {
             console.error("Fout bij het toevoegen van speler aan sessie:", error);
         }

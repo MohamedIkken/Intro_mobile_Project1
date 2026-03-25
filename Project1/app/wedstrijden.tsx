@@ -12,6 +12,7 @@ export default function Wedstrijden() {
     const [wachtwoordModalZichtbaar, setWachtwoordModalZichtbaar] = useState(false);
     const [geselecteerdeSessie, setGeselecteerdeSessie] = useState<Session | null>(null);
     const [ingevoerdeKey, setIngevoerdeKey] = useState("");
+    const [gekozenTeam, setGekozenTeam] = useState<'A' | 'B' | null>(null);
 
     // Filter States
     const [filterModalZichtbaar, setFilterModalZichtbaar] = useState(false);
@@ -21,9 +22,9 @@ export default function Wedstrijden() {
     // Haal dynamisch alle unieke locaties uit de database op
     const uniekeLocaties = ["Alles", ...Array.from(new Set(sessions.map((s: Session) => s.mapName)))];
 
-    const voegSpelerToeAanSessies = (sessionId: string) => {
+    const voegSpelerToeAanSessies = (sessionId: string, team?: 'A' | 'B') => {
         if (userId) {
-            joinSession(sessionId, userId);
+            joinSession(sessionId, userId, team);
             Alert.alert("Succes", "Je doet nu mee aan deze wedstrijd!");
             router.push("/mijnsessies");
         }
@@ -38,6 +39,7 @@ export default function Wedstrijden() {
         if (session.sessionType === 'practice') {
             setGeselecteerdeSessie(session);
             setIngevoerdeKey("");
+            setGekozenTeam(null);
             setWachtwoordModalZichtbaar(true);
             return;
         }
@@ -46,9 +48,14 @@ export default function Wedstrijden() {
     };
 
     const bevestigWachtwoord = () => {
+        if (!gekozenTeam) {
+            Alert.alert("Fout", "Kies eerst een team (A of B).");
+            return;
+        }
+
         if (geselecteerdeSessie && ingevoerdeKey === geselecteerdeSessie.serverKey) {
             setWachtwoordModalZichtbaar(false);
-            voegSpelerToeAanSessies(geselecteerdeSessie.id);
+            voegSpelerToeAanSessies(geselecteerdeSessie.id, gekozenTeam);
         } else {
             Alert.alert("Fout", "Onjuist wachtwoord.");
         }
@@ -111,7 +118,7 @@ export default function Wedstrijden() {
                                             {session.sessionType === 'match' ? 'Match' : 'Practice'}
                                         </Text>
                                     </View>
-                                    {session.isCompetitive && (
+                                    {session.isCompetitive && session.sessionType === 'match' && (
                                         <View style={styles.badgeComp}>
                                             <Text style={styles.badgeTextComp}>Competitief</Text>
                                         </View>
@@ -209,7 +216,37 @@ export default function Wedstrijden() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Privé Sessie</Text>
-                        <Text style={styles.modalSubtitle}>Voer de Server Key in om mee te doen:</Text>
+                        <Text style={styles.modalSubtitle}>Kies een team en voer de Server Key in:</Text>
+
+                        {/* NIEUW: Team Selectie */}
+                        <View style={styles.teamContainer}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.teamButton, gekozenTeam === 'A' && styles.teamButtonActive,
+                                    gekozenTeam === 'A' && styles.teamButtonActive,
+                                    (geselecteerdeSessie?.teamA?.length || 0) >= 2 && { opacity: 0.3 }
+                                ]}
+                                onPress={() => setGekozenTeam('A')}
+                                disabled={(geselecteerdeSessie?.teamA?.length || 0) >= 2} // Max 2 spelers per team
+                            >
+                                <Text style={[styles.teamButtonText, gekozenTeam === 'A' && styles.teamButtonTextActive]}>
+                                    Team A {(geselecteerdeSessie?.teamA?.length || 0) >= 2 ? "(Vol)" : ""}
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[
+                                    styles.teamButton,
+                                    gekozenTeam === 'B' && styles.teamButtonActive,
+                                    (geselecteerdeSessie?.teamB?.length || 0) >= 2 && { opacity: 0.3 }
+                                ]}
+                                onPress={() => setGekozenTeam('B')}
+                                disabled={(geselecteerdeSessie?.teamB?.length || 0) >= 2}
+                            >
+                                <Text style={[styles.teamButtonText, gekozenTeam === 'B' && styles.teamButtonTextActive]}>
+                                    Team B {(geselecteerdeSessie?.teamB?.length || 0) >= 2 ? "(Vol)" : ""}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
 
                         <TextInput
                             style={styles.modalInput}
@@ -242,6 +279,32 @@ export default function Wedstrijden() {
 }
 
 const styles = StyleSheet.create({
+    teamContainer: {
+        flexDirection: "row",
+        gap: 12,
+        marginBottom: 20,
+    },
+    teamButton: {
+        flex: 1,
+        padding: 14,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#1E1E30",
+        alignItems: "center",
+        backgroundColor: "#0B0B12",
+    },
+    teamButtonActive: {
+        backgroundColor: "#2E6BFF",
+        borderColor: "#2E6BFF",
+    },
+    teamButtonText: {
+        color: "#8888AA",
+        fontWeight: "bold",
+        fontSize: 16,
+    },
+    teamButtonTextActive: {
+        color: "#FFFFFF",
+    },
     container: {
         flex: 1,
         backgroundColor: "#0B0B12", // Zorgt dat de achtergrond ALTIJD donker is, tot de bodem

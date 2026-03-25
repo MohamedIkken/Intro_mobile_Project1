@@ -92,7 +92,7 @@ export default function MijnSessies() {
                                                 {session.sessionType === 'match' ? 'Match' : 'Practice'}
                                             </Text>
                                         </View>
-                                        {session.isCompetitive && (
+                                        {session.isCompetitive && session.sessionType === 'match' && (
                                             <View style={styles.badgeComp}>
                                                 <Text style={styles.badgeTextComp}>Competitief</Text>
                                             </View>
@@ -102,6 +102,17 @@ export default function MijnSessies() {
                                                 <Text style={styles.badgeTextHost}>Host</Text>
                                             </View>
                                         )}
+
+                                        {/* --- NIEUW: TEAM BADGE MET ICOON --- */}
+                                        {session.sessionType === 'practice' && userId && (session.teamA?.includes(userId) || session.teamB?.includes(userId)) && (
+                                            <View style={styles.badgeTeam}>
+                                                <Ionicons name="flag" size={10} color="#E040FB" style={{ marginRight: 4 }} />
+                                                <Text style={styles.badgeTextTeam}>
+                                                    {session.teamA?.includes(userId) ? "TEAM A" : "TEAM B"}
+                                                </Text>
+                                            </View>
+                                        )}
+                                        {/* ----------------------------------- */}
                                     </View>
                                 </View>
 
@@ -185,6 +196,20 @@ export default function MijnSessies() {
 }
 
 const styles = StyleSheet.create({
+    badgeTeam: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "rgba(156, 39, 176, 0.15)", // Mooie paarse achtergrond
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        borderRadius: 6,
+    },
+    badgeTextTeam: {
+        fontSize: 10,
+        fontWeight: "bold",
+        color: "#E040FB", // Felle paarse tekst
+        textTransform: "uppercase",
+    },
     modalOverlay: {
         flex: 1,
         backgroundColor: "rgba(0,0,0,0.85)",

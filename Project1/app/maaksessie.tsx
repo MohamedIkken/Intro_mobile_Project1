@@ -62,6 +62,9 @@ export default function MaakSessie() {
 
         if (sessionType === "practice") {
             nieuweSessieData.serverKey = serverKey;
+            nieuweSessieData.status = "open";
+            nieuweSessieData.teamA = [auth.currentUser?.uid || "onbekende_host"];
+            nieuweSessieData.teamB = [];
         }
 
         addSession(nieuweSessieData);
@@ -151,8 +154,9 @@ export default function MaakSessie() {
             <Text style={styles.sectionTitle}>TYPE WEDSTRIJD</Text>
             <View style={styles.row}>
                 <TouchableOpacity
-                    style={[styles.choiceButton, isCompetitive === true && styles.choiceButtonSelected]}
+                    style={[styles.choiceButton, isCompetitive === true && styles.choiceButtonSelected, sessionType === "practice" && { opacity: 0.3, borderColor: "#1E1E30" }]}
                     onPress={() => setIsCompetitive(true)}
+                    disabled={sessionType === "practice"} // Competitief uitschakelen als practice geselecteerd is
                 >
                     <Text style={[styles.choiceText, isCompetitive === true && styles.choiceTextSelected]}>Competitief</Text>
                 </TouchableOpacity>
@@ -174,7 +178,10 @@ export default function MaakSessie() {
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.choiceButton, sessionType === "practice" && styles.choiceButtonSelected]}
-                    onPress={() => setSessionType("practice")}
+                    onPress={() => {
+                        setSessionType("practice");
+                        setIsCompetitive(false); // Practice sessies zijn altijd vriendschappelijk
+                    }}
                 >
                     <Text style={[styles.choiceText, sessionType === "practice" && styles.choiceTextSelected]}>Practice (Privé)</Text>
                 </TouchableOpacity>
