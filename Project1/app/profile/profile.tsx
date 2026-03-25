@@ -9,14 +9,29 @@ import {
   ActivityIndicator,
   SafeAreaView,
 } from "react-native";
+import { useState, useEffect } from "react";
 import { useAuth } from "../AuthContext";
 import { router } from "expo-router";
 import { useFonts, Orbitron_700Bold } from "@expo-google-fonts/orbitron";
 import { Ionicons } from "@expo/vector-icons";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../firebaseConfig";
 
 export default function Profile() {
   const { user } = useAuth();
   const [fontsLoaded] = useFonts({ Orbitron_700Bold });
+  const [profielFoto, setProfielFoto] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadPhoto = async () => {
+      if (!user?.uid) return;
+      const snap = await getDoc(doc(db, "users", user.uid));
+      if (snap.exists() && snap.data().photoBase64) {
+        setProfielFoto(snap.data().photoBase64);
+      }
+    };
+    loadPhoto();
+  }, [user?.uid]);
 
   if (!fontsLoaded) {
     return <ActivityIndicator />;
@@ -37,8 +52,8 @@ export default function Profile() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.avatarWrap}>
-          {user?.photoURL ? (
-            <Image source={{ uri: user.photoURL }} style={styles.avatar} />
+          {profielFoto ? (
+            <Image source={{ uri: profielFoto }} style={styles.avatar} />
           ) : (
             <View style={styles.avatarPlaceholder}>
               <Ionicons name="person" size={48} color="#8888AA" />

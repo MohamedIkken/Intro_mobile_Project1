@@ -11,13 +11,13 @@ import {
   Image,
   ActivityIndicator,
 } from "react-native";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getAuth, updateProfile } from "firebase/auth";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "../../firebaseConfig";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { db } from "../../firebaseConfig";
 
 export default function BewerkProfile() {
   const auth = getAuth();
@@ -30,28 +30,43 @@ export default function BewerkProfile() {
   // image van mobiele telefoon halen
   const [uploading, setUploading] = useState(false);
 
+  useEffect(() => {
+    const loadPhoto = async () => {
+      const userId = auth.currentUser?.uid;
+      if (!userId) return;
+      const snap = await getDoc(doc(db, "users", userId));
+      if (snap.exists() && snap.data().photoBase64) {
+        setProfielFoto(snap.data().photoBase64);
+      }
+    };
+    loadPhoto();
+  }, []);
+
   const uploadImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0,
+      base64: true,
     });
 
     if (!result.canceled) {
       setUploading(true);
       try {
-        const uri = result.assets[0].uri;
-        const response = await fetch(uri);
-        const blob = await response.blob();
-
+        const base64 = result.assets[0].base64;
         const userId = auth.currentUser?.uid;
-        const storageRef = ref(storage, `profilePhotos/${userId}`);
-        await uploadBytes(storageRef, blob);
-        const downloadURL = await getDownloadURL(storageRef);
-        setProfielFoto(downloadURL);
+        const photoDataUrl = `data:image/jpeg;base64,${base64}`;
+
+        // Sla de foto op als base64 in Firestore (geen Storage nodig)
+        await setDoc(
+          doc(db, "users", userId!),
+          { photoBase64: photoDataUrl },
+          { merge: true },
+        );
+        setProfielFoto(photoDataUrl);
       } catch (error) {
-        console.error("Fout bij uploaden van afbeelding:", error);
+        alert("Foto bestand is te groot");
       } finally {
         setUploading(false);
       }
@@ -98,7 +113,10 @@ export default function BewerkProfile() {
             disabled={uploading}
           >
             {profielFoto ? (
-              <Image source={{ uri: profielFoto }} style={styles.photoPreview} />
+              <Image
+                source={{ uri: profielFoto }}
+                style={styles.photoPreview}
+              />
             ) : (
               <View style={styles.photoPlaceholder}>
                 <Ionicons name="camera-outline" size={32} color="#8888AA" />
@@ -124,11 +142,19 @@ export default function BewerkProfile() {
         <TouchableOpacity
           style={[styles.saveButton, uploading && { opacity: 0.5 }]}
           disabled={uploading}
-          onPress={() => {
-            updateProfile(auth.currentUser!, {
+          onPress={async () => {
+            await updateProfile(auth.currentUser!, {
               displayName: name,
-              photoURL: profielFoto,
-            }).then(() => setShowModal(true));
+            });
+            const userId = auth.currentUser?.uid;
+            if (userId) {
+              await setDoc(
+                doc(db, "users", userId),
+                { photoBase64: profielFoto },
+                { merge: true },
+              );
+            }
+            setShowModal(true);
           }}
         >
           <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
