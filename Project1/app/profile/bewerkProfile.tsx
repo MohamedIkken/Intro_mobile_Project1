@@ -8,11 +8,16 @@ import {
   SafeAreaView,
   StatusBar,
   ScrollView,
+  Image,
+  ActivityIndicator,
 } from "react-native";
 import { useState } from "react";
 import { getAuth, updateProfile } from "firebase/auth";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "../../firebaseConfig";
 
 export default function BewerkProfile() {
   const auth = getAuth();
@@ -22,6 +27,36 @@ export default function BewerkProfile() {
   const [profielFoto, setProfielFoto] = useState(
     auth.currentUser?.photoURL || "",
   );
+  // image van mobiele telefoon halen
+  const [uploading, setUploading] = useState(false);
+
+  const uploadImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0,
+    });
+
+    if (!result.canceled) {
+      setUploading(true);
+      try {
+        const uri = result.assets[0].uri;
+        const response = await fetch(uri);
+        const blob = await response.blob();
+
+        const userId = auth.currentUser?.uid;
+        const storageRef = ref(storage, `profilePhotos/${userId}`);
+        await uploadBytes(storageRef, blob);
+        const downloadURL = await getDownloadURL(storageRef);
+        setProfielFoto(downloadURL);
+      } catch (error) {
+        console.error("Fout bij uploaden van afbeelding:", error);
+      } finally {
+        setUploading(false);
+      }
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -56,23 +91,39 @@ export default function BewerkProfile() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.label}>PROFIEL FOTO URL</Text>
-          <View style={styles.inputCard}>
-            <View style={styles.inputIconWrap}>
-              <Ionicons name="image-outline" size={22} color="#FFFFFF" />
+          <Text style={styles.label}>PROFIEL FOTO</Text>
+          <TouchableOpacity
+            style={styles.photoPickerCard}
+            onPress={uploadImage}
+            disabled={uploading}
+          >
+            {profielFoto ? (
+              <Image source={{ uri: profielFoto }} style={styles.photoPreview} />
+            ) : (
+              <View style={styles.photoPlaceholder}>
+                <Ionicons name="camera-outline" size={32} color="#8888AA" />
+              </View>
+            )}
+            <View style={styles.photoTextWrap}>
+              {uploading ? (
+                <ActivityIndicator color="#1B6CF2" />
+              ) : (
+                <>
+                  <Text style={styles.photoPickerText}>
+                    {profielFoto ? "Foto wijzigen" : "Kies een foto"}
+                  </Text>
+                  <Text style={styles.photoPickerSubtext}>
+                    Tik om een foto uit je filmrol te kiezen
+                  </Text>
+                </>
+              )}
             </View>
-            <TextInput
-              style={styles.input}
-              placeholder="https://voorbeeld.com/foto.jpg"
-              placeholderTextColor="#8888AA"
-              value={profielFoto}
-              onChangeText={setProfielFoto}
-            />
-          </View>
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity
-          style={styles.saveButton}
+          style={[styles.saveButton, uploading && { opacity: 0.5 }]}
+          disabled={uploading}
           onPress={() => {
             updateProfile(auth.currentUser!, {
               displayName: name,
@@ -180,6 +231,44 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "500",
+  },
+  photoPickerCard: {
+    backgroundColor: "#0F0F1C",
+    borderWidth: 1,
+    borderColor: "#1E1E35",
+    borderRadius: 16,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  photoPreview: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    marginRight: 14,
+  },
+  photoPlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#1E1E35",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  photoTextWrap: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  photoPickerText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  photoPickerSubtext: {
+    color: "#8888AA",
+    fontSize: 12,
+    marginTop: 2,
   },
   saveButton: {
     backgroundColor: "#1B6CF2",
