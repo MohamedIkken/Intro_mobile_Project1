@@ -10,15 +10,37 @@ import { router } from "expo-router";
 import { useFonts, Orbitron_700Bold } from "@expo-google-fonts/orbitron";
 import { ActivityIndicator } from "react-native";
 import { signOut } from "firebase/auth";
-import { auth } from "@/firebaseConfig";
+import { auth, db } from "@/firebaseConfig";
 import { useAuth } from "./AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { useEffect, useState } from "react";
 
 export default function DashboardScreen() {
   const [fontsLoaded] = useFonts({
     Orbitron_700Bold,
   });
   const { user } = useAuth();
+  const [heeftOngelezen, setHeeftOngelezen] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    const q = query(
+      collection(db, "chats"),
+      where("players", "array-contains", user.uid),
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const ongelezen = snapshot.docs.some((doc) => {
+        const data = doc.data();
+        if (!data.lastMessageTimestamp) return false;
+        const lastRead = data.lastRead?.[user.uid];
+        if (!lastRead) return true;
+        return new Date(data.lastMessageTimestamp.toDate()) > new Date(lastRead.toDate());
+      });
+      setHeeftOngelezen(ongelezen);
+    });
+    return () => unsubscribe();
+  }, [user]);
 
   if (!fontsLoaded) {
     return <ActivityIndicator />;
@@ -33,8 +55,12 @@ export default function DashboardScreen() {
       <View style={styles.topBar}>
         <Text style={styles.logo}>PLAYNODE</Text>
         <View style={styles.topBarIcons}>
-          <TouchableOpacity style={styles.topBarIconBtn}>
+          <TouchableOpacity
+            style={styles.topBarIconBtn}
+            onPress={() => router.push("/Chat/MessageDashboard")}
+          >
             <Ionicons name="chatbubble-outline" size={22} color="#8888AA" />
+            {heeftOngelezen && <View style={styles.unreadDot} />}
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.topBarIconBtn}
@@ -67,7 +93,8 @@ export default function DashboardScreen() {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.kaartGroot}
+          <TouchableOpacity
+            style={styles.kaartGroot}
             onPress={() => router.push("/wedstrijden")}
           >
             <View style={styles.kaartIconWrap}>
@@ -105,7 +132,7 @@ export default function DashboardScreen() {
             </View>
           </TouchableOpacity>
 
-           <TouchableOpacity
+          <TouchableOpacity
             style={styles.kaartGroot}
             onPress={() => router.push("/mijnsessies")}
           >
@@ -156,6 +183,16 @@ const styles = StyleSheet.create({
   },
   topBarIconBtn: {
     padding: 4,
+    position: "relative",
+  },
+  unreadDot: {
+    position: "absolute",
+    top: 2,
+    right: 0,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#E53935",
   },
   logo: {
     fontSize: 22,
