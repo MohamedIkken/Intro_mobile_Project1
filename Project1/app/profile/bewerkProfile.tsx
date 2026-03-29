@@ -1,44 +1,204 @@
-import { View, Text, Button, TextInput, TouchableOpacity } from "react-native";
-import { Label } from "@react-navigation/elements";
-import { StyleSheet } from "react-native";
-import { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Modal,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  ScrollView,
+  Image,
+  ActivityIndicator,
+} from "react-native";
+import { useState, useEffect } from "react";
 import { getAuth, updateProfile } from "firebase/auth";
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { db } from "../../firebaseConfig";
 
 export default function BewerkProfile() {
   const auth = getAuth();
 
   const [name, setName] = useState(auth.currentUser?.displayName || "");
+  const [showModal, setShowModal] = useState(false);
   const [profielFoto, setProfielFoto] = useState(
     auth.currentUser?.photoURL || "",
   );
+  // image van mobiele telefoon halen
+  const [uploading, setUploading] = useState(false);
 
-  updateProfile(auth.currentUser!, {
-    displayName: name,
-    photoURL: profielFoto,
-  })
-    .then(() => {
-      // Profiel bijgewerkt
-    })
-    .catch((error) => {
-      // Fout bij het bijwerken van het profiel
+  useEffect(() => {
+    const loadPhoto = async () => {
+      const userId = auth.currentUser?.uid;
+      if (!userId) return;
+      const snap = await getDoc(doc(db, "users", userId));
+      if (snap.exists() && snap.data().photoBase64) {
+        setProfielFoto(snap.data().photoBase64);
+      }
+    };
+    loadPhoto();
+  }, []);
+
+  const uploadImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0,
+      base64: true,
     });
 
+    if (!result.canceled) {
+      setUploading(true);
+      try {
+        const base64 = result.assets[0].base64;
+        const userId = auth.currentUser?.uid;
+        const photoDataUrl = `data:image/jpeg;base64,${base64}`;
+
+        // Sla de foto op als base64 in Firestore (geen Storage nodig)
+        await setDoc(
+          doc(db, "users", userId!),
+          { photoBase64: photoDataUrl },
+          { merge: true },
+        );
+        setProfielFoto(photoDataUrl);
+      } catch (error) {
+        alert("Foto bestand is te groot");
+      } finally {
+        setUploading(false);
+      }
+    }
+  };
+
   return (
-    <View>
-      <Text>Bewerk Profiel</Text>
-      <Label>Naam:</Label>
-      <TextInput placeholder="Naam" value={name} onChangeText={setName} />
-      <Label>Profiel Foto:</Label>
-      <TextInput
-        placeholder="Profiel Foto"
-        value={profielFoto}
-        onChangeText={setProfielFoto}
-      />
-    </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <View style={styles.glow} />
+
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => router.push("/profile/profile")}
+      >
+        <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+        <Text style={styles.backButtonText}>Terug</Text>
+      </TouchableOpacity>
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>Bewerk Profiel</Text>
+
+        <View style={styles.section}>
+          <Text style={styles.label}>NAAM</Text>
+          <View style={styles.inputCard}>
+            <View style={styles.inputIconWrap}>
+              <Ionicons name="person-outline" size={22} color="#FFFFFF" />
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Naam"
+              placeholderTextColor="#8888AA"
+              value={name}
+              onChangeText={setName}
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.label}>PROFIEL FOTO</Text>
+          <TouchableOpacity
+            style={styles.photoPickerCard}
+            onPress={uploadImage}
+            disabled={uploading}
+          >
+            {profielFoto ? (
+              <Image
+                source={{ uri: profielFoto }}
+                style={styles.photoPreview}
+              />
+            ) : (
+              <View style={styles.photoPlaceholder}>
+                <Ionicons name="camera-outline" size={32} color="#8888AA" />
+              </View>
+            )}
+            <View style={styles.photoTextWrap}>
+              {uploading ? (
+                <ActivityIndicator color="#1B6CF2" />
+              ) : (
+                <>
+                  <Text style={styles.photoPickerText}>
+                    {profielFoto ? "Foto wijzigen" : "Kies een foto"}
+                  </Text>
+                  <Text style={styles.photoPickerSubtext}>
+                    Tik om een foto uit je filmrol te kiezen
+                  </Text>
+                </>
+              )}
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          style={[styles.saveButton, uploading && { opacity: 0.5 }]}
+          disabled={uploading}
+          onPress={async () => {
+            await updateProfile(auth.currentUser!, {
+              displayName: name,
+            });
+            const userId = auth.currentUser?.uid;
+            if (userId) {
+              await setDoc(
+                doc(db, "users", userId),
+                { photoBase64: profielFoto },
+                { merge: true },
+              );
+            }
+            setShowModal(true);
+          }}
+        >
+          <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
+          <Text style={styles.saveButtonText}>Opslaan</Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      <Modal visible={showModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Ionicons name="checkmark-circle" size={48} color="#1B6CF2" />
+            <Text style={styles.modalTitle}>Gelukt!</Text>
+            <Text style={styles.modalText}>Profiel succesvol bijgewerkt.</Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => {
+                setShowModal(false);
+                router.push("/profile/profile");
+              }}
+            >
+              <Text style={styles.modalButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#08080F",
+  },
+  glow: {
+    position: "absolute",
+    top: -100,
+    right: -100,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: "#1B6CF2",
+    opacity: 0.15,
+  },
   backButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -51,5 +211,142 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 6,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 40,
+  },
+  title: {
+    color: "#FFFFFF",
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: 32,
+  },
+  section: {
+    marginBottom: 20,
+  },
+  label: {
+    color: "#8888AA",
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginBottom: 8,
+  },
+  inputCard: {
+    backgroundColor: "#0F0F1C",
+    borderWidth: 1,
+    borderColor: "#1E1E35",
+    borderRadius: 16,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  inputIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: "#1E1E35",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  input: {
+    flex: 1,
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  photoPickerCard: {
+    backgroundColor: "#0F0F1C",
+    borderWidth: 1,
+    borderColor: "#1E1E35",
+    borderRadius: 16,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  photoPreview: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    marginRight: 14,
+  },
+  photoPlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#1E1E35",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  photoTextWrap: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  photoPickerText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  photoPickerSubtext: {
+    color: "#8888AA",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  saveButton: {
+    backgroundColor: "#1B6CF2",
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 12,
+  },
+  saveButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    marginLeft: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#0F0F1C",
+    borderWidth: 1,
+    borderColor: "#1E1E35",
+    borderRadius: 20,
+    padding: 32,
+    alignItems: "center",
+    marginHorizontal: 40,
+  },
+  modalTitle: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "700",
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  modalText: {
+    color: "#8888AA",
+    fontSize: 14,
+    marginBottom: 24,
+  },
+  modalButton: {
+    backgroundColor: "#1B6CF2",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+  },
+  modalButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
   },
 });
