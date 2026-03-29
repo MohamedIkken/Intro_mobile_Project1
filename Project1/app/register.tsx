@@ -1,6 +1,7 @@
-import { auth } from "@/firebaseConfig";
+import { auth, db } from "@/firebaseConfig";
 import { router } from "expo-router";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, UserProfile } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 import { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, StatusBar } from "react-native";
 
@@ -18,7 +19,21 @@ export default function RegisterScreen() {
       await updateProfile(credential.user, {
         displayName: name.trim(),
       });
-    } catch (err :any) {
+
+      // NIEUW: toegevoegd door jouw baas, Mohamed. Ik maak een user document aan in de Firestore met startlevel 2.0
+      const userProfile: UserProfile = {
+        uid: credential.user.uid,
+        name: name.trim(),
+        email: email.trim(),
+        level: 2.0, // Startlevel voor nieuwe gebruikers
+        createdAt: new Date().toISOString()
+      };
+
+      await setDoc(doc(db, "users", credential.user.uid), userProfile);
+      // EINDE NIEUW 
+
+
+    } catch (err: any) {
       setError("Invalid email or password(min 6 characters)");
       setTimeout(() => setError(""), 3000);
     }

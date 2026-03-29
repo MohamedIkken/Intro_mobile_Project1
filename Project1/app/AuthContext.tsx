@@ -2,6 +2,16 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged, User } from "firebase/auth";
 import { router } from "expo-router";
 
+// NIEUW: toegevoegd door jouw baas, Mohamed. Ik definieer een UserProfile interface die we gaan gebruiken om gebruikersprofielen in Firestore op te slaan. Deze interface bevat velden zoals uid, name, email, level en createdAt. Dit maakt het makkelijker om gebruikersgegevens te beheren en te typen in onze app.
+export interface UserProfile {
+    uid?: string;
+    name: string;
+    email: string;
+    level: number;
+    createdAt: string;
+}
+// EINDE NIEUW
+
 type AuthContextType = {
     user: User | null;
     loading: boolean;

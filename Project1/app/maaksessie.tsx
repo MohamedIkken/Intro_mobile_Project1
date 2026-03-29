@@ -247,6 +247,8 @@ export default function MaakSessie() {
                     </View>
                 </View>
             </Modal>
+
+            
         </ScrollView>
     );
 }

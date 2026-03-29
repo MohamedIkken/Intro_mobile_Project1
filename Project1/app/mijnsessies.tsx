@@ -2,12 +2,14 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, Pre
 import { router } from "expo-router";
 import { Session, useSessionContext } from "./SessionContext";
 import { Ionicons } from "@expo/vector-icons";
-import { auth } from "@/firebaseConfig";
+import { auth, db } from "@/firebaseConfig";
 import { useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
 
 export default function MijnSessies() {
-    const { sessions, deleteSession, leaveSession } = useSessionContext();
+    const { sessions, deleteSession, leaveSession, endSession, getSessionById } = useSessionContext();
     const userId = auth.currentUser?.uid;
+    const [spelers, setSpelers] = useState<{ id: string, name: string }[]>([]);
 
     const [modalConfig, setModalConfig] = useState({
         zichtbaar: false,
@@ -17,6 +19,68 @@ export default function MijnSessies() {
         tekst: "",
         knopTeskt: "",
     })
+
+    // twee modalen 1 voor verlaten van 2v2, 1 voor 1v1v1v1
+    const [teAfsluitenSessieId, setTeAfsluitenSessieId] = useState<string | null>(null);
+    const [geselecteerdeWinnaar, setGeselecteerdeWinnaar] = useState<string | null>(null);
+
+    // Test states om ze zichtbaar te maken
+    const [matchModalZichtbaar, setMatchModalZichtbaar] = useState(false);
+    const [practiceModalZichtbaar, setPracticeModalZichtbaar] = useState(false);
+
+    // Ik toon de juste form, wanneer moet ik de toon op false zetten? Wanneer ik bevestig of annuleer, dus in beide gevallen
+    // Voeg bovenaan bij je andere states deze toe om het ID te onthouden
+    const handleAfsluiten = async (sessionId: string) => {
+        const s = getSessionById(sessionId);
+        if (!s) return;
+
+        setTeAfsluitenSessieId(sessionId);
+        setGeselecteerdeWinnaar(null);
+
+        // STAP 1: Haal de echte namen op uit Firebase op basis van de speler ID's
+        const geladenSpelers = [];
+        for (const playerId of s.players) {
+            try {
+                const userRef = doc(db, "users", playerId);
+                const userSnap = await getDoc(userRef);
+                
+                if (userSnap.exists()) {
+                    geladenSpelers.push({
+                        id: playerId, // We hebben het ID nodig voor de berekening later
+                        name: userSnap.data().name || "Onbekende Speler" // Toon de naam in de UI
+                    });
+                }
+            } catch (error) {
+                console.error("Fout bij ophalen speler:", error);
+            }
+        }
+        
+        // Sla ze op in de state
+        setSpelers(geladenSpelers);
+
+        // STAP 2: Open de juiste modal
+        if (s.sessionType === "match") {
+            setMatchModalZichtbaar(true);
+        } else {
+            setPracticeModalZichtbaar(true);
+        }
+    }
+
+    const bewaarSessieResultaat = async () => {
+        if (!teAfsluitenSessieId || !geselecteerdeWinnaar) {
+            Alert.alert("Fout", "Selecteer eerst een winnaar.");
+            return;
+        }
+
+        // Roep de nieuwe Firebase logica aan
+        await endSession(teAfsluitenSessieId, geselecteerdeWinnaar);
+
+        // Modals sluiten en states resetten
+        setMatchModalZichtbaar(false);
+        setPracticeModalZichtbaar(false);
+        setTeAfsluitenSessieId(null);
+        setGeselecteerdeWinnaar(null);
+    };
 
     const sluitModal = () => {
         setModalConfig({ ...modalConfig, zichtbaar: false });
@@ -108,7 +172,7 @@ export default function MijnSessies() {
                                             <View style={styles.badgeTeam}>
                                                 <Ionicons name="flag" size={10} color="#E040FB" style={{ marginRight: 4 }} />
                                                 <Text style={styles.badgeTextTeam}>
-                                                    {session.teamA?.includes(userId) ? "TEAM A" : "TEAM B"}
+                                                    {session.teamA?.includes(userId) ? "teamA" : "teamB"}
                                                 </Text>
                                             </View>
                                         )}
@@ -150,6 +214,15 @@ export default function MijnSessies() {
                                         >
                                             <Text style={styles.deleteButtonText}>Verwijder</Text>
                                         </TouchableOpacity>
+
+                                        {/*button voor het afsluiten */}
+                                        <TouchableOpacity
+                                            style={styles.deleteButton}
+                                            onPress={() => handleAfsluiten(session.id)}
+                                        >
+                                            <Text style={styles.deleteButtonText}>Afsluiten</Text>
+                                        </TouchableOpacity>
+
                                     </View>
                                 ) : (
                                     <TouchableOpacity
@@ -187,15 +260,149 @@ export default function MijnSessies() {
                     </View>
                 </Modal>
 
-                <TouchableOpacity style={styles.addButton} onPress={() => router.push("/maaksessie")}>
-                    <Text style={styles.addButtonText}>Nieuwe Sessie</Text>
-                </TouchableOpacity>
+
+                {/* Modal 1: Match Afsluiten (4 hardcoded spelers) */}
+                <Modal transparent visible={matchModalZichtbaar} animationType="fade">
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalKaart}>
+                            <Text style={styles.modalTitel}>Match Afsluiten</Text>
+                            <Text style={styles.modalTekst}>Wie heeft de Battle Royale gewonnen?</Text>
+
+                            <View style={styles.gridContainer}>
+                                {spelers.map((speler) => (
+                                    <TouchableOpacity
+                                        key={speler.id}
+                                        style={[styles.gridBtn, geselecteerdeWinnaar === speler.id && styles.gridBtnActief]}
+                                        onPress={() => setGeselecteerdeWinnaar(speler.id)}
+                                    >
+                                        <Text style={[styles.gridText, geselecteerdeWinnaar === speler.id && styles.gridTextActief]}>
+                                            {speler.name}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            <View style={styles.modalKnoppen}>
+                                <Pressable style={styles.modalAnnuleer} onPress={() => setMatchModalZichtbaar(false)}>
+                                    <Text style={styles.modalAnnuleerTekst}>Annuleer</Text>
+                                </Pressable>
+                                <Pressable style={[styles.modalBevestig, { backgroundColor: "#4CAF50" }]} onPress={bewaarSessieResultaat}>
+                                    <Text style={styles.modalBevestigTekst}>Opslaan</Text>
+                                </Pressable>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+
+
+                {/* Modal 2: Practice Afsluiten (Team A vs Team B) */}
+                <Modal transparent visible={practiceModalZichtbaar} animationType="fade">
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalKaart}>
+                            <Text style={styles.modalTitel}>Practice Afsluiten</Text>
+                            <Text style={styles.modalTekst}>Welk team heeft gewonnen?</Text>
+
+                            <View style={styles.teamSelectGroup}>
+                                <TouchableOpacity
+                                    style={[styles.teamSelectBtn, geselecteerdeWinnaar === 'teamA' && styles.teamSelectBtnActief]}
+                                    onPress={() => setGeselecteerdeWinnaar('teamA')}
+                                >
+                                    <Text style={[styles.teamSelectText, geselecteerdeWinnaar === 'teamA' && styles.teamSelectTextActief]}>
+                                        Team A
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.teamSelectBtn, geselecteerdeWinnaar === 'teamB' && styles.teamSelectBtnActief]}
+                                    onPress={() => setGeselecteerdeWinnaar('teamB')}
+                                >
+                                    <Text style={[styles.teamSelectText, geselecteerdeWinnaar === 'teamB' && styles.teamSelectTextActief]}>
+                                        Team B
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.modalKnoppen}>
+                                <Pressable style={styles.modalAnnuleer} onPress={() => setPracticeModalZichtbaar(false)}>
+                                    <Text style={styles.modalAnnuleerTekst}>Annuleer</Text>
+                                </Pressable>
+                                <Pressable style={[styles.modalBevestig, { backgroundColor: "#4CAF50" }]} onPress={bewaarSessieResultaat}>
+                                    <Text style={styles.modalBevestigTekst}>Opslaan</Text>
+                                </Pressable>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+
             </ScrollView>
         </View>
     )
 }
 
 const styles = StyleSheet.create({
+    gridContainer: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 10,
+        width: "100%",
+        marginBottom: 16,
+    },
+    gridBtn: {
+        width: "47%", // Zorgt voor 2 blokken naast elkaar (2x2 grid)
+        padding: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#1E1E30",
+        alignItems: "center",
+        backgroundColor: "#0B0B12",
+    },
+    gridBtnActief: {
+        backgroundColor: "#2E6BFF",
+        borderColor: "#2E6BFF",
+    },
+    gridText: {
+        color: "#8888AA",
+        fontWeight: "bold",
+    },
+    gridTextActief: {
+        color: "#FFFFFF",
+    },
+    teamSelectGroup: {
+        flexDirection: "row",
+        gap: 10,
+        width: "100%",
+        marginBottom: 16,
+    },
+    teamSelectBtn: {
+        flex: 1,
+        padding: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#1E1E30",
+        alignItems: "center",
+        backgroundColor: "#0B0B12",
+    },
+    teamSelectBtnActief: {
+        backgroundColor: "#2E6BFF",
+        borderColor: "#2E6BFF",
+    },
+    teamSelectText: {
+        color: "#8888AA",
+        fontWeight: "bold",
+    },
+    teamSelectTextActief: {
+        color: "#FFFFFF",
+    },
+    scoreInput: {
+        width: "100%",
+        backgroundColor: "#0B0B12",
+        borderWidth: 1,
+        borderColor: "#1E1E30",
+        borderRadius: 8,
+        color: "#FFFFFF",
+        padding: 14,
+        fontSize: 16,
+        marginBottom: 20,
+    },
     badgeTeam: {
         flexDirection: "row",
         alignItems: "center",

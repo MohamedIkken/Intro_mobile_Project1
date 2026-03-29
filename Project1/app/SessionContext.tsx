@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import { collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { db } from "../firebaseConfig";
 
 // 1. Definieer het datatype (Voorbereiding op Firebase)
@@ -78,7 +78,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
             const updatedData: any = {
                 players: arrayUnion(playerId)
             };
-            
+
             if (team) team === 'A' ? updatedData.teamA = arrayUnion(playerId) : updatedData.teamB = arrayUnion(playerId);
 
             await updateDoc(doc(db, "sessions", sessionId), updatedData);
@@ -99,8 +99,69 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    // Sessie beeindigen 
+    const endSession = async (sessionId: string, winnaar: string) => {
+        try {
+            // 1. Haal de sessie op om te bepalen wie er meespeelt
+            const sessionRef = doc(db, "sessions", sessionId);
+            const sessionSnap = await getDoc(sessionRef);
+
+            if (!sessionSnap.exists()) return;
+
+            const sessionData = sessionSnap.data() as Session; // wat doet deze regel? ai, geef antwoord: Deze regel haalt de gegevens van het opgehaalde document (de sessie) op en cast het naar het Session type. Het zorgt ervoor dat de data die we uit Firebase krijgen, wordt geïnterpreteerd als een object dat voldoet aan de structuur van het Session interface dat we eerder hebben gedefinieerd. Hierdoor kunnen we later in de code gemakkelijk toegang krijgen tot de eigenschappen van de sessie, zoals players, teamA, teamB, etc., met de juiste types.
+            const isTeamGame = winnaar === "teamA" || winnaar === "teamB";
+
+            // Ophalen van alle huidige levels
+            const huidigeLevels: Record<string, number> = {};
+            // 2. loop alle spelers en haal hun huidige level op
+            for (const playerId of sessionData.players) {
+                const userRef = doc(db, "users", playerId);
+                const userSnap = await getDoc(userRef);
+
+                // de spelerlevels record bijwerken
+                if (userSnap.exists())
+                    // ik ga ervan dat ik levels opsla als level. maar ik sla nog geen levels en ook maak geen level bij nieuwe gebruikers aan, dat moet gemaakt worden met een default waarde van 2. ai geef jij aantwoord kort: Deze regel controleert of het document van de gebruiker bestaat in de "users" collectie. Als het document bestaat, wordt het level van de gebruiker opgehaald (ervan uitgaande dat het veld 'level' heet) en opgeslagen in de spelerLevels record met de playerId als sleutel. Als er geen level is opgeslagen voor die gebruiker, wordt er een default waarde van 0 gebruikt.    
+                    huidigeLevels[playerId] = userSnap.data().level || 0; // als er geen level is, default naar 0
+            }
+
+            // Berekenen van nieuwe levels op basis van wie er gewonnen heeft
+            // STAP 2: Berekenen van de nieuwe levels in het geheugen
+            const nieuweLevels: Record<string, number> = {};
+            for (const playerId of sessionData.players) {
+                let isWinner = false;
+
+                if (isTeamGame) {
+                    const isInWinningTeamA = winnaar === 'teamA' && sessionData.teamA?.includes(playerId);
+                    const isInWinningTeamB = winnaar === 'teamB' && sessionData.teamB?.includes(playerId);
+                    isWinner = Boolean(isInWinningTeamA || isInWinningTeamB);
+                } else {
+                    isWinner = winnaar === playerId;
+                }
+
+                // Bepaal de punten (+0.15 winst, -0.10 verlies 2v2, -0.05 verlies 1v1v1v1)
+                const levelAanpassing = isWinner ? 0.15 : (isTeamGame ? -0.10 : -0.05);
+                let berekendLevel = huidigeLevels[playerId] + levelAanpassing;
+
+                // Zorg dat het tussen 0.5 en 7.0 blijft en rond af op 2 decimalen
+                berekendLevel = Math.max(0.5, Math.min(7.0, berekendLevel));
+                nieuweLevels[playerId] = Math.round(berekendLevel * 100) / 100;
+            }
+
+            // STAP 3: Opslaan van alle nieuwe data in Firebase
+            for (const playerId of sessionData.players) {
+                await updateDoc(doc(db, "users", playerId), { level: nieuweLevels[playerId] });
+            }
+
+            await updateDoc(sessionRef, { status: 'voltooid', winnaar: winnaar });
+
+
+        } catch (error) {
+            console.error("Fout bij het beëindigen van sessie:", error);
+        }
+    };
+
     return (
-        <SessionContext.Provider value={{ sessions, addSession, deleteSession, getSessionById, joinSession, leaveSession, editSession }}>
+        <SessionContext.Provider value={{ sessions, addSession, deleteSession, getSessionById, joinSession, leaveSession, editSession, endSession }}>
             {children}
         </SessionContext.Provider>
     );

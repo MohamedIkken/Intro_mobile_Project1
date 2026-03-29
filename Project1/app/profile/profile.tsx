@@ -13,10 +13,37 @@ import { useAuth } from "../AuthContext";
 import { router } from "expo-router";
 import { useFonts, Orbitron_700Bold } from "@expo-google-fonts/orbitron";
 import { Ionicons } from "@expo/vector-icons";
+import { useState, useEffect } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/firebaseConfig"; // Zorg dat het pad klopt
+import { UserProfile } from "../AuthContext";
 
 export default function Profile() {
   const { user } = useAuth();
   const [fontsLoaded] = useFonts({ Orbitron_700Bold });
+  const [level, setLevel] = useState<number | null>(null);
+
+  // Haal het level op uit Firestore wanneer de user geladen is
+  useEffect(() => {
+    const fetchUserLevel = async () => {
+      if (user?.uid) {
+        try {
+          const userDocRef = doc(db, "users", user.uid);
+          const userDocSnap = await getDoc(userDocRef);
+
+          const userData = userDocSnap.data() as UserProfile;
+
+          if (userDocSnap.exists()) {
+            setLevel(userData.level || 2.0); // Fallback naar 2.0
+          }
+        } catch (error) {
+          console.error("Fout bij ophalen level:", error);
+        }
+      }
+    };
+
+    fetchUserLevel();
+  }, [user]);
 
   if (!fontsLoaded) {
     return <ActivityIndicator />;
@@ -71,6 +98,19 @@ export default function Profile() {
             <View style={styles.cardTextWrap}>
               <Text style={styles.cardLabel}>E-mail</Text>
               <Text style={styles.cardValue}>{user?.email ?? "-"}</Text>
+            </View>
+          </View>
+
+          {/* NIEUW: Padel Level Kaartje */}
+          <View style={styles.card}>
+            <View style={styles.cardIconWrap}>
+              <Ionicons name="bar-chart-outline" size={22} color="#FFFFFF" />
+            </View>
+            <View style={styles.cardTextWrap}>
+              <Text style={styles.cardLabel}>Padel Level</Text>
+              <Text style={styles.cardValue}>
+                {level !== null ? level.toFixed(2) : "Laden..."}
+              </Text>
             </View>
           </View>
         </View>
