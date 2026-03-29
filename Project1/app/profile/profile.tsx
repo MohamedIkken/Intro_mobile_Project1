@@ -14,20 +14,13 @@ import { useAuth } from "../AuthContext";
 import { router } from "expo-router";
 import { useFonts, Orbitron_700Bold } from "@expo-google-fonts/orbitron";
 import { Ionicons } from "@expo/vector-icons";
-<<<<<<< HEAD
-import { useState, useEffect } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebaseConfig"; // Zorg dat het pad klopt
 import { UserProfile } from "../AuthContext";
-=======
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../firebaseConfig";
->>>>>>> 5da57b6a723d61f13507d29014cf7233151d6c0b
 
 export default function Profile() {
   const { user } = useAuth();
   const [fontsLoaded] = useFonts({ Orbitron_700Bold });
-<<<<<<< HEAD
   const [level, setLevel] = useState<number | null>(null);
 
   // Haal het level op uit Firestore wanneer de user geladen is
@@ -51,7 +44,6 @@ export default function Profile() {
 
     fetchUserLevel();
   }, [user]);
-=======
   const [profielFoto, setProfielFoto] = useState<string | null>(null);
 
   useEffect(() => {
@@ -64,7 +56,6 @@ export default function Profile() {
     };
     loadPhoto();
   }, [user?.uid]);
->>>>>>> 5da57b6a723d61f13507d29014cf7233151d6c0b
 
   if (!fontsLoaded) {
     return <ActivityIndicator />;
