@@ -14,57 +14,40 @@ import { useAuth } from "../AuthContext";
 import { router } from "expo-router";
 import { useFonts, Orbitron_700Bold } from "@expo-google-fonts/orbitron";
 import { Ionicons } from "@expo/vector-icons";
-<<<<<<< HEAD
-import { useState, useEffect } from "react";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/firebaseConfig"; // Zorg dat het pad klopt
+import { db } from "@/firebaseConfig";
 import { UserProfile } from "../AuthContext";
-=======
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../firebaseConfig";
->>>>>>> 5da57b6a723d61f13507d29014cf7233151d6c0b
 
 export default function Profile() {
   const { user } = useAuth();
   const [fontsLoaded] = useFonts({ Orbitron_700Bold });
-<<<<<<< HEAD
   const [level, setLevel] = useState<number | null>(null);
+  const [profielFoto, setProfielFoto] = useState<string | null>(null);
 
-  // Haal het level op uit Firestore wanneer de user geladen is
   useEffect(() => {
-    const fetchUserLevel = async () => {
+    const fetchUserData = async () => {
       if (user?.uid) {
         try {
           const userDocRef = doc(db, "users", user.uid);
           const userDocSnap = await getDoc(userDocRef);
 
-          const userData = userDocSnap.data() as UserProfile;
-
           if (userDocSnap.exists()) {
-            setLevel(userData.level || 2.0); // Fallback naar 2.0
+            const userData = userDocSnap.data() as UserProfile & { photoBase64?: string };
+            
+            setLevel(userData.level || 2.0);
+            
+            if (userData.photoBase64) {
+              setProfielFoto(userData.photoBase64);
+            }
           }
         } catch (error) {
-          console.error("Fout bij ophalen level:", error);
+          console.error("Fout bij ophalen gebruikersdata:", error);
         }
       }
     };
 
-    fetchUserLevel();
+    fetchUserData();
   }, [user]);
-=======
-  const [profielFoto, setProfielFoto] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadPhoto = async () => {
-      if (!user?.uid) return;
-      const snap = await getDoc(doc(db, "users", user.uid));
-      if (snap.exists() && snap.data().photoBase64) {
-        setProfielFoto(snap.data().photoBase64);
-      }
-    };
-    loadPhoto();
-  }, [user?.uid]);
->>>>>>> 5da57b6a723d61f13507d29014cf7233151d6c0b
 
   if (!fontsLoaded) {
     return <ActivityIndicator />;
@@ -122,7 +105,6 @@ export default function Profile() {
             </View>
           </View>
 
-          {/* NIEUW: Padel Level Kaartje */}
           <View style={styles.card}>
             <View style={styles.cardIconWrap}>
               <Ionicons name="bar-chart-outline" size={22} color="#FFFFFF" />
