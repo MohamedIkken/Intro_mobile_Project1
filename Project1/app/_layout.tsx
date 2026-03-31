@@ -31,6 +31,14 @@ const RootLayout = () => {
               name="profile/bewerkProfile"
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="Chat/MessageDashboard"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Chat/ChatMessages"
+              options={{ headerShown: false }}
+            />
           </Stack>
         </BookingProvider>
       </SessionProvider>
