@@ -9,7 +9,7 @@ import {
   Modal,
   Pressable,
 } from "react-native";
-import { useSessionContext, Session } from "./context/SessionContext";
+import { useSessionContext, Session } from "../context/SessionContext";
 import { router } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";

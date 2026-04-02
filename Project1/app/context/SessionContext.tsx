@@ -19,7 +19,7 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { db } from "../firebaseConfig";
+import { db } from "../../firebaseConfig";
 
 export interface Session {
   id: string;
