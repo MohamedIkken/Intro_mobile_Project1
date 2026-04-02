@@ -14,7 +14,8 @@ import { auth, db } from "@/firebaseConfig";
 import { useAuth } from "./AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function DashboardScreen() {
   const [fontsLoaded] = useFonts({
@@ -22,6 +23,14 @@ export default function DashboardScreen() {
   });
   const { user } = useAuth();
   const [heeftOngelezen, setHeeftOngelezen] = useState(false);
+  const [displayName, setDisplayName] = useState(user?.displayName);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!user) return;
+      user.reload().then(() => setDisplayName(user.displayName));
+    }, [user]),
+  );
 
   useEffect(() => {
     if (!user) return;
@@ -79,7 +88,7 @@ export default function DashboardScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.kaartenRij}>
-          <Text style={styles.welcomeText}>Welcome {user?.displayName}!</Text>
+          <Text style={styles.welcomeText}>Welcome {displayName}!</Text>
           <TouchableOpacity
             style={styles.kaartGroot}
             onPress={() => router.push("/maaksessie")}

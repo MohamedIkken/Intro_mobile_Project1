@@ -23,7 +23,7 @@ const Index = () => {
     try {
       setError("");
       await signInWithEmailAndPassword(auth, email.trim(), password);
-    } catch (err :any) {
+    } catch {
       setError("Invalid email or password");
       setTimeout(() => setError(""), 3000);
     }

@@ -1,14 +1,8 @@
-import { auth, db } from "@/firebaseConfig";
+import { db } from "@/firebaseConfig";
 import { router } from "expo-router";
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  doc,
-  getDoc,
-} from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { useCallback, useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -17,6 +11,8 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../AuthContext";
+import { fetchPlayerNames } from "./chatHelpers";
 
 interface Chat {
   id: string;
@@ -32,41 +28,30 @@ interface Chat {
 }
 
 export default function MessageDashboard() {
-  //1. Nadat je de chats ophaalt, de UIDs uit players[] pakken
-  //2. Per UID een getDoc doen op "users/{uid}" om de naam op te halen
-  //3. Die namen opslaan in een aparte state en tonen in plaats van de UIDs
-  const huidigeUser = auth.currentUser;
+  const { user } = useAuth();
   const [chats, setChats] = useState<Chat[]>([]);
   const [playerNames, setPlayerNames] = useState<{ [uid: string]: string }>({});
 
-  const fetchPlayerNames = async (uids: string[]) => {
-    const names: { [uid: string]: string } = {};
-    for (const uid of uids) {
-      try {
-        const userDoc = await getDoc(doc(db, "users", uid));
-        if (userDoc.exists()) {
-          names[uid] = userDoc.data().name || "Onbekend";
-        } else {
-          names[uid] = "Onbekend";
-        }
-      } catch (error) {
-        console.error("Fout bij het ophalen van gebruikersnaam:", error);
-        names[uid] = "Onbekend";
+  useFocusEffect(
+    useCallback(() => {
+      // Namen altijd vers ophalen bij focus
+      if (chats.length > 0) {
+        const allPlayerUids = Array.from(new Set(chats.flatMap((chat) => chat.players)));
+        fetchPlayerNames(allPlayerUids, {}).then(setPlayerNames);
       }
-    }
-    setPlayerNames((prev) => ({ ...prev, ...names }));
-  };
+    }, [chats]),
+  );
 
   useEffect(() => {
-    if (!huidigeUser) return;
+    if (!user) return;
 
     const chatsRef = collection(db, "chats");
     const q = query(
       chatsRef,
-      where("players", "array-contains", huidigeUser.uid),
+      where("players", "array-contains", user.uid),
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
       const chatsData = snapshot.docs.map(
         (doc) =>
           ({
@@ -75,19 +60,19 @@ export default function MessageDashboard() {
           }) as Chat,
       );
       setChats(chatsData);
-      setPlayerNames({}); // Reset player names voordat we nieuwe ophalen
-      const allPlayerUids = chatsData.flatMap((chat) => chat.players);
-      fetchPlayerNames(Array.from(new Set(allPlayerUids))); // Unieke UIDs doorgeven
+      const allPlayerUids = Array.from(new Set(chatsData.flatMap((chat) => chat.players)));
+      const updatedNames = await fetchPlayerNames(allPlayerUids, playerNames);
+      setPlayerNames(updatedNames);
     });
 
     return () => unsubscribe();
-  }, [huidigeUser]);
+  }, [user]);
 
   return (
     <View style={styles.container}>
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => router.push("/dashboard")}
+        onPress={() => router.back()}
       >
         <Ionicons name="arrow-back" size={20} color="#8888AA" />
         <Text style={styles.backText}>Terug</Text>
@@ -114,8 +99,9 @@ export default function MessageDashboard() {
             >
               <View style={styles.cardHeader}>
                 {item.lastMessageTimestamp &&
-                  (!item.lastRead?.[huidigeUser?.uid || ""] ||
-                    (item.lastMessageTimestamp as any).toDate?.() > (item.lastRead[huidigeUser?.uid || ""] as any).toDate?.()) && (
+                  user &&
+                  (!item.lastRead?.[user.uid] ||
+                    (item.lastMessageTimestamp as any).toDate?.() > (item.lastRead[user.uid] as any).toDate?.()) && (
                     <View style={styles.unreadDot} />
                   )}
                 <Ionicons

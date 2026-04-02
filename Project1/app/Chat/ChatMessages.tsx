@@ -1,4 +1,4 @@
-import { auth, db } from "@/firebaseConfig";
+import { db } from "@/firebaseConfig";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   onSnapshot,
@@ -8,7 +8,6 @@ import {
   addDoc,
   doc,
   updateDoc,
-  getDoc,
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -22,6 +21,8 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../AuthContext";
+import { fetchPlayerNames } from "./chatHelpers";
 
 interface Message {
   id: string;
@@ -37,25 +38,7 @@ export default function ChatMessages() {
   const flatListRef = useRef<FlatList>(null);
   const [playerNames, setPlayerNames] = useState<{ [uid: string]: string }>({});
 
-  const currentUser = auth.currentUser;
-
-  const fetchPlayerNames = async (uids: string[]) => {
-    const names: { [uid: string]: string } = {};
-    for (const uid of uids) {
-      try {
-        const userDoc = await getDoc(doc(db, "users", uid));
-        if (userDoc.exists()) {
-          names[uid] = userDoc.data().name || "Onbekend";
-        } else {
-          names[uid] = "Onbekend";
-        }
-      } catch (error) {
-        console.error("Fout bij het ophalen van gebruikersnaam:", error);
-        names[uid] = "Onbekend";
-      }
-    }
-    setPlayerNames((prev) => ({ ...prev, ...names }));
-  };
+  const { user: currentUser } = useAuth();
 
   const sendMessage = async () => {
     if (!message.trim()) return;
@@ -108,7 +91,7 @@ export default function ChatMessages() {
       const uniqueSenderIds = Array.from(
         new Set(loadedMessages.map((msg) => msg.senderId)),
       );
-      fetchPlayerNames(uniqueSenderIds);
+      fetchPlayerNames(uniqueSenderIds, playerNames).then(setPlayerNames);
     });
     return () => unsubscribe();
   }, [chatId]);
@@ -221,10 +204,11 @@ const styles = StyleSheet.create({
     color: "#8888AA",
   },
   headerTitle: {
+    flex: 1,
     fontSize: 18,
     fontWeight: "bold",
     color: "#FFFFFF",
-    marginLeft: 90,
+    textAlign: "center",
   },
   messageList: {
     flex: 1,

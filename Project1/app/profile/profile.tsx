@@ -6,36 +6,35 @@ import {
   StatusBar,
   Image,
   ScrollView,
-  ActivityIndicator,
   SafeAreaView,
 } from "react-native";
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useAuth } from "../AuthContext";
 import { router } from "expo-router";
-import { useFonts, Orbitron_700Bold } from "@expo-google-fonts/orbitron";
 import { Ionicons } from "@expo/vector-icons";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { UserProfile } from "../AuthContext";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function Profile() {
   const { user } = useAuth();
-  const [fontsLoaded] = useFonts({ Orbitron_700Bold });
   const [level, setLevel] = useState<number | null>(null);
   const [profielFoto, setProfielFoto] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (user?.uid) {
+  useFocusEffect(
+    useCallback(() => {
+      const fetchUserData = async () => {
+        if (!user?.uid) return;
         try {
-          const userDocRef = doc(db, "users", user.uid);
-          const userDocSnap = await getDoc(userDocRef);
+          await user.reload();
+          setDisplayName(user.displayName);
 
+          const userDocSnap = await getDoc(doc(db, "users", user.uid));
           if (userDocSnap.exists()) {
-            const userData = userDocSnap.data() as UserProfile & { photoBase64?: string };
-            
+            const userData = userDocSnap.data() as UserProfile;
             setLevel(userData.level || 2.0);
-            
             if (userData.photoBase64) {
               setProfielFoto(userData.photoBase64);
             }
@@ -43,15 +42,11 @@ export default function Profile() {
         } catch (error) {
           console.error("Fout bij ophalen gebruikersdata:", error);
         }
-      }
-    };
+      };
 
-    fetchUserData();
-  }, [user]);
-
-  if (!fontsLoaded) {
-    return <ActivityIndicator />;
-  }
+      fetchUserData();
+    }, [user]),
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -60,7 +55,7 @@ export default function Profile() {
 
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => router.push("/dashboard")}
+        onPress={() => router.back()}
       >
         <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         <Text style={styles.backButtonText}>Terug</Text>
@@ -78,7 +73,7 @@ export default function Profile() {
         </View>
 
         <Text style={styles.displayName}>
-          {user?.displayName ?? "Gebruiker"}
+          {displayName ?? "Gebruiker"}
         </Text>
         <Text style={styles.email}>{user?.email}</Text>
 
@@ -91,7 +86,7 @@ export default function Profile() {
             </View>
             <View style={styles.cardTextWrap}>
               <Text style={styles.cardLabel}>Naam</Text>
-              <Text style={styles.cardValue}>{user?.displayName ?? "-"}</Text>
+              <Text style={styles.cardValue}>{displayName ?? "-"}</Text>
             </View>
           </View>
 
@@ -153,23 +148,6 @@ const styles = StyleSheet.create({
     borderRadius: 150,
     backgroundColor: "#1B6CF2",
     opacity: 0.15,
-  },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 12,
-    backgroundColor: "#0F0F1C",
-    borderBottomWidth: 1,
-    borderBottomColor: "#1E1E35",
-  },
-  logo: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    letterSpacing: 2,
-    fontFamily: "Orbitron_700Bold",
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -260,10 +238,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     marginBottom: 2,
-  },
-  cardSub: {
-    color: "#8888AA",
-    fontSize: 12,
   },
   backButton: {
     flexDirection: "row",

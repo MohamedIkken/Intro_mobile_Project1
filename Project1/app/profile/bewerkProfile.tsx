@@ -12,35 +12,32 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useState, useEffect } from "react";
-import { getAuth, updateProfile } from "firebase/auth";
+import { updateProfile } from "firebase/auth";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
+import { useAuth } from "../AuthContext";
 
 export default function BewerkProfile() {
-  const auth = getAuth();
+  const { user } = useAuth();
 
-  const [name, setName] = useState(auth.currentUser?.displayName || "");
+  const [name, setName] = useState(user?.displayName || "");
   const [showModal, setShowModal] = useState(false);
-  const [profielFoto, setProfielFoto] = useState(
-    auth.currentUser?.photoURL || "",
-  );
-  // image van mobiele telefoon halen
+  const [profielFoto, setProfielFoto] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const loadPhoto = async () => {
-      const userId = auth.currentUser?.uid;
-      if (!userId) return;
-      const snap = await getDoc(doc(db, "users", userId));
+      if (!user?.uid) return;
+      const snap = await getDoc(doc(db, "users", user.uid));
       if (snap.exists() && snap.data().photoBase64) {
         setProfielFoto(snap.data().photoBase64);
       }
     };
     loadPhoto();
-  }, []);
+  }, [user]);
 
   const uploadImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -52,24 +49,27 @@ export default function BewerkProfile() {
     });
 
     if (!result.canceled) {
-      setUploading(true);
-      try {
-        const base64 = result.assets[0].base64;
-        const userId = auth.currentUser?.uid;
-        const photoDataUrl = `data:image/jpeg;base64,${base64}`;
+      const base64 = result.assets[0].base64;
+      const photoDataUrl = `data:image/jpeg;base64,${base64}`;
+      setProfielFoto(photoDataUrl);
+    }
+  };
 
-        // Sla de foto op als base64 in Firestore (geen Storage nodig)
-        await setDoc(
-          doc(db, "users", userId!),
-          { photoBase64: photoDataUrl },
-          { merge: true },
-        );
-        setProfielFoto(photoDataUrl);
-      } catch (error) {
-        alert("Foto bestand is te groot");
-      } finally {
-        setUploading(false);
-      }
+  const handleSave = async () => {
+    if (!user) return;
+    try {
+      setUploading(true);
+      await updateProfile(user, { displayName: name });
+      await setDoc(
+        doc(db, "users", user.uid),
+        { name, photoBase64: profielFoto },
+        { merge: true },
+      );
+      setShowModal(true);
+    } catch (error) {
+      alert("Er ging iets mis bij het opslaan. Probeer het opnieuw.");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -80,7 +80,7 @@ export default function BewerkProfile() {
 
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => router.push("/profile/profile")}
+        onPress={() => router.back()}
       >
         <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         <Text style={styles.backButtonText}>Terug</Text>
@@ -142,20 +142,7 @@ export default function BewerkProfile() {
         <TouchableOpacity
           style={[styles.saveButton, uploading && { opacity: 0.5 }]}
           disabled={uploading}
-          onPress={async () => {
-            await updateProfile(auth.currentUser!, {
-              displayName: name,
-            });
-            const userId = auth.currentUser?.uid;
-            if (userId) {
-              await setDoc(
-                doc(db, "users", userId),
-                { photoBase64: profielFoto },
-                { merge: true },
-              );
-            }
-            setShowModal(true);
-          }}
+          onPress={handleSave}
         >
           <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
           <Text style={styles.saveButtonText}>Opslaan</Text>
@@ -172,7 +159,7 @@ export default function BewerkProfile() {
               style={styles.modalButton}
               onPress={() => {
                 setShowModal(false);
-                router.push("/profile/profile");
+                router.back();
               }}
             >
               <Text style={styles.modalButtonText}>OK</Text>

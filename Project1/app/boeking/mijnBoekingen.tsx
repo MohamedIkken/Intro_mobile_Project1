@@ -11,25 +11,14 @@ import {
 } from "react-native";
 import { useAuth } from "../AuthContext";
 import { useEffect, useState } from "react";
-import boekingService from "./boekingService";
+import { fetchMijnBoekingen, annuleerBoeking, markeerAfgerond } from "./boekingService";
 import { Boeking } from "./boekingTypes";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-
-const formatTijd = (d: Date) =>
-  d.toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" });
-
-const formatDatum = (d: Date) =>
-  d.toLocaleDateString("nl-BE", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
+import { formatTijd, formatDatum } from "./formatHelpers";
 
 export default function MijnBoekingen() {
   const { user } = useAuth();
-  const { fetchMijnBoekingen, annuleerBoeking, markeerAfgerond } =
-    boekingService();
 
   const [boekingen, setBoekingen] = useState<Boeking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,7 +63,6 @@ export default function MijnBoekingen() {
     try {
       await annuleerBoeking(annuleerModal);
       setAnnuleerModal(null);
-      setBoekingen((prev) => prev.filter((b) => b.id !== annuleerModal)); // Updaten van de UI door de geannuleerde boeking direct te verwijderen
       await loadBoekingen();
     } catch (error) {
       console.error("Fout bij het annuleren van de boeking:", error);
@@ -87,7 +75,7 @@ export default function MijnBoekingen() {
 
       <TouchableOpacity
         style={s.backButton}
-        onPress={() => router.push("/dashboard")}
+        onPress={() => router.back()}
       >
         <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         <Text style={s.backButtonText}>Terug</Text>
@@ -126,14 +114,14 @@ export default function MijnBoekingen() {
                 <View style={s.detailRij}>
                   <Text style={s.detailLabel}>Datum</Text>
                   <Text style={s.detailWaarde}>
-                    {formatDatum(new Date(boeking.startTijd))}
+                    {formatDatum(boeking.startTijd)}
                   </Text>
                 </View>
                 <View style={s.detailRij}>
                   <Text style={s.detailLabel}>Tijd</Text>
                   <Text style={s.detailWaarde}>
-                    {formatTijd(new Date(boeking.startTijd))} –{" "}
-                    {formatTijd(new Date(boeking.eindeTijd))}
+                    {formatTijd(boeking.startTijd)} –{" "}
+                    {formatTijd(boeking.eindeTijd)}
                   </Text>
                 </View>
                 <View style={[s.detailRij, { borderBottomWidth: 0 }]}>
