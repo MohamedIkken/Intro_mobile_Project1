@@ -205,7 +205,7 @@ export default function MijnSessies() {
                                     <View style={styles.buttonGroup}>
                                         <TouchableOpacity
                                             style={styles.editButton}
-                                            onPress={() => router.push(`/wijzigsessie?id=${session.id}`)}
+                                            onPress={() => router.push(`/sessies/wijzigsessie?id=${session.id}`)}
                                         >
                                             <Text style={styles.editButtonText}>Wijzigen</Text>
                                         </TouchableOpacity>

@@ -11,11 +11,11 @@ const RootLayout = () => {
           <Stack>
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="register" options={{ headerShown: false }} />
-            <Stack.Screen name="mijnsessies" options={{ headerShown: false }} />
-            <Stack.Screen name="maaksessie" options={{ headerShown: false }} />
+            <Stack.Screen name="sessies/mijnsessies" options={{ headerShown: false }} />
+            <Stack.Screen name="sessies/maaksessie" options={{ headerShown: false }} />
             <Stack.Screen name="dashboard" options={{ headerShown: false }} />
             <Stack.Screen name="wedstrijden" options={{ headerShown: false }} />
-            <Stack.Screen name="wijzigsessie" options={{ headerShown: false }} />
+            <Stack.Screen name="sessies/wijzigsessie" options={{ headerShown: false }} />
             <Stack.Screen name="geschiedenis" options={{ headerShown: false }} />
             <Stack.Screen
               name="boeking/serverBoeken"

@@ -60,7 +60,7 @@ export default function Wedstrijden() {
 
     const gaNaarMijnSessies = () => {
         setSuccesModalZichtbaar(false);
-        router.push("/mijnsessies");
+        router.push("/sessies/mijnsessies");
     };
 
     const beschikbareSessies = sessions.filter((session: Session) => {

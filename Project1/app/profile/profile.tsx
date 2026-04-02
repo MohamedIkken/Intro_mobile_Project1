@@ -53,10 +53,7 @@ export default function Profile() {
       <StatusBar barStyle="light-content" />
       <View style={styles.glow} />
 
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.back()}
-      >
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         <Text style={styles.backButtonText}>Terug</Text>
       </TouchableOpacity>
@@ -72,9 +69,7 @@ export default function Profile() {
           )}
         </View>
 
-        <Text style={styles.displayName}>
-          {displayName ?? "Gebruiker"}
-        </Text>
+        <Text style={styles.displayName}>{displayName ?? "Gebruiker"}</Text>
         <Text style={styles.email}>{user?.email}</Text>
 
         <View style={styles.section}>
@@ -105,7 +100,7 @@ export default function Profile() {
               <Ionicons name="bar-chart-outline" size={22} color="#FFFFFF" />
             </View>
             <View style={styles.cardTextWrap}>
-              <Text style={styles.cardLabel}>Padel Level</Text>
+              <Text style={styles.cardLabel}>Game experience Level</Text>
               <Text style={styles.cardValue}>
                 {level !== null ? level.toFixed(2) : "Laden..."}
               </Text>

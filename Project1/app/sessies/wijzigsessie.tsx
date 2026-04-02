@@ -78,7 +78,7 @@ export default function WijzigSessie() {
     };
 
     const navigeerTerug = () => {
-        router.push("/mijnsessies");
+        router.push("/sessies/mijnsessies");
     }
 
     const onChangeDate = (event: any, selectedDate: Date | undefined) => {

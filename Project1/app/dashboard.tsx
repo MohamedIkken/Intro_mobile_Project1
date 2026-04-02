@@ -91,7 +91,7 @@ export default function DashboardScreen() {
           <Text style={styles.welcomeText}>Welcome {displayName}!</Text>
           <TouchableOpacity
             style={styles.kaartGroot}
-            onPress={() => router.push("/maaksessie")}
+            onPress={() => router.push("/sessies/maaksessie")}
           >
             <View style={styles.kaartIconWrap}>
               <Ionicons name="add-circle-outline" size={28} color="#FFFFFF" />
@@ -143,7 +143,7 @@ export default function DashboardScreen() {
 
           <TouchableOpacity
             style={styles.kaartGroot}
-            onPress={() => router.push("/mijnsessies")}
+            onPress={() => router.push("/sessies/mijnsessies")}
           >
             <View style={styles.kaartIconWrap}>
               <Ionicons name="people-outline" size={28} color="#FFFFFF" />

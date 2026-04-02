@@ -388,14 +388,14 @@ export default function ServerBoeken() {
       <Modal transparent visible={geboektModal} animationType="fade">
         <View style={s.modalOverlay}>
           <View style={s.modalKaart}>
-            <Text style={s.successIcon}>✓</Text>
+            <Ionicons name="checkmark-circle" size={48} color="#4ade80" />
             <Text style={s.modalTitel}>Geboekt!</Text>
             <Text style={s.modalTekst}>Je reservatie is bevestigd.</Text>
             <Pressable
-              style={s.modalBevestig}
+              style={s.geboektSluitKnop}
               onPress={() => setGeboektModal(false)}
             >
-              <Text style={s.modalBevestigTekst}>Sluiten</Text>
+              <Text style={s.geboektSluitTekst}>OK</Text>
             </Pressable>
           </View>
         </View>
@@ -659,7 +659,19 @@ const s = StyleSheet.create({
     alignItems: "center",
   },
   modalBevestigTekst: { color: "#FFFFFF", fontWeight: "bold" },
-  successIcon: { fontSize: 40, marginBottom: 12 },
+  geboektSluitKnop: {
+    width: "100%",
+    paddingVertical: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#1E1E30",
+    alignItems: "center",
+  },
+  geboektSluitTekst: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
 
   slotKnopDisabled: { opacity: 0.4 },
 });

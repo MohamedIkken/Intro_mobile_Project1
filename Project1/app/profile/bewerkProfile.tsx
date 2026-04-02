@@ -27,6 +27,7 @@ export default function BewerkProfile() {
   const [showModal, setShowModal] = useState(false);
   const [profielFoto, setProfielFoto] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [errorModal, setErrorModal] = useState<string | null>(null);
 
   useEffect(() => {
     const loadPhoto = async () => {
@@ -66,8 +67,8 @@ export default function BewerkProfile() {
         { merge: true },
       );
       setShowModal(true);
-    } catch (error) {
-      alert("Er ging iets mis bij het opslaan. Probeer het opnieuw.");
+    } catch {
+      setErrorModal("Te groot bestand. Kies een foto van minder dan 1MB.");
     } finally {
       setUploading(false);
     }
@@ -78,10 +79,7 @@ export default function BewerkProfile() {
       <StatusBar barStyle="light-content" />
       <View style={styles.glow} />
 
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.back()}
-      >
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         <Text style={styles.backButtonText}>Terug</Text>
       </TouchableOpacity>
@@ -161,6 +159,22 @@ export default function BewerkProfile() {
                 setShowModal(false);
                 router.back();
               }}
+            >
+              <Text style={styles.modalButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={errorModal !== null} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Ionicons name="alert-circle" size={48} color="#FF4C4C" />
+            <Text style={styles.modalTitle}>Fout</Text>
+            <Text style={styles.modalText}>{errorModal}</Text>
+            <TouchableOpacity
+              style={styles.errorModalButton}
+              onPress={() => setErrorModal(null)}
             >
               <Text style={styles.modalButtonText}>OK</Text>
             </TouchableOpacity>
@@ -335,5 +349,11 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "700",
+  },
+  errorModalButton: {
+    backgroundColor: "#FF4C4C",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 40,
   },
 });
