@@ -3,10 +3,11 @@ import { router } from "expo-router";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useState } from "react";
-import { UserProfile } from "./context/AuthContext";
+import { UserProfile, useAuth } from "./context/AuthContext";
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, StatusBar } from "react-native";
 
 export default function RegisterScreen() {
+  const { setSkipRedirect } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,8 +16,10 @@ export default function RegisterScreen() {
   const handleSignUp = async () => {
     try {
       setError("");
+      setSkipRedirect(true);
+
       const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
-      // Update the user's display name after successful registration
+
       await updateProfile(credential.user, {
         displayName: name.trim(),
       });
@@ -30,7 +33,11 @@ export default function RegisterScreen() {
       };
 
       await setDoc(doc(db, "users", credential.user.uid), userProfile);
+
+      setSkipRedirect(false);
+      router.replace("/dashboard");
     } catch {
+      setSkipRedirect(false);
       setError("Invalid email or password (min 6 characters)");
       setTimeout(() => setError(""), 3000);
     }

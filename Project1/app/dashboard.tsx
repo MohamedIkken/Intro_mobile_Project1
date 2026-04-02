@@ -13,7 +13,7 @@ import { signOut } from "firebase/auth";
 import { auth, db } from "@/firebaseConfig";
 import { useAuth } from "./context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, doc, getDoc, query, where, onSnapshot } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 
@@ -28,7 +28,21 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       if (!user) return;
-      user.reload().then(() => setDisplayName(user.displayName));
+      const loadName = async () => {
+        try {
+          await user.reload();
+        } catch {}
+        if (user.displayName) {
+          setDisplayName(user.displayName);
+        } else {
+          // Fallback: naam ophalen uit Firestore (bij nieuwe registratie is displayName nog niet beschikbaar)
+          const snap = await getDoc(doc(db, "users", user.uid));
+          if (snap.exists()) {
+            setDisplayName(snap.data().name || null);
+          }
+        }
+      };
+      loadName();
     }, [user]),
   );
 

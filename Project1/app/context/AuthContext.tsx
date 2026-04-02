@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { getAuth, onAuthStateChanged, User } from "firebase/auth";
 import { router } from "expo-router";
 
@@ -14,11 +14,13 @@ export interface UserProfile {
 type AuthContextType = {
     user: User | null;
     loading: boolean;
+    setSkipRedirect: (skip: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
     user: null,
     loading: true,
+    setSkipRedirect: () => {},
 });
 
 type AuthProviderProps = {
@@ -27,37 +29,34 @@ type AuthProviderProps = {
 
 // Provider component die de auth status bijhoudt en beschikbaar maakt voor de rest van de app
 export const AuthProvider = ({children}: AuthProviderProps) => {
-    // Opslaan wie ingelogd is
     const [user, setUser] = useState<User | null>(null);
-    // wachten tot firebase antwoord
     const [loading, setLoading] = useState(true);
+    const skipRedirectRef = useRef(false);
     const auth = getAuth();
 
-    // Kijken of er een user is die al ingelogd is bij het opstarten van de app
-    useEffect(()=>{
-        // Luisteren naar veranderingen in de auth status (inloggen, uitloggen, sessie verlopen)
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            // Opslaan in state
-            setUser(currentUser);
-            // Zeggen dat we klaar zijn met laden
-            setLoading(false)
+    const setSkipRedirect = (skip: boolean) => {
+        skipRedirectRef.current = skip;
+    };
 
-            // Naar dasboard als user ingelogd is.
-        if (currentUser){
-            router.replace("/dashboard")
-        } else {
-            // Naar login als user niet ingelogd is.
-            router.replace("/")
-        }
+    useEffect(()=>{
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            setUser(currentUser);
+            setLoading(false);
+
+            if (skipRedirectRef.current) return;
+
+            if (currentUser){
+                router.replace("/dashboard");
+            } else {
+                router.replace("/");
+            }
         });
 
         return unsubscribe;
     }, [auth]);
 
-    // Context provider
-    // Alle kinderen kunnen nu de user en loading status gebruiken
     return (
-        <AuthContext.Provider value={{user, loading}}>
+        <AuthContext.Provider value={{user, loading, setSkipRedirect}}>
             {children}
         </AuthContext.Provider>
     )
