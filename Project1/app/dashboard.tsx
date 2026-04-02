@@ -124,11 +124,11 @@ export default function DashboardScreen() {
             onPress={() => router.push("/boeking/mijnBoekingen")}
           >
             <View style={styles.kaartIconWrap}>
-              <Ionicons name="folder-open-outline" size={28} color="#FFFFFF" />
+              <Ionicons name="calendar-outline" size={28} color="#FFFFFF" />
             </View>
             <View style={styles.kaartTextWrap}>
               <Text style={styles.kaartTitel}>Mijn boekingen</Text>
-              <Text style={styles.kaartSub}>Bekijke je boekingen</Text>
+              <Text style={styles.kaartSub}>Bekijk je boekingen</Text>
             </View>
           </TouchableOpacity>
 
@@ -137,11 +137,24 @@ export default function DashboardScreen() {
             onPress={() => router.push("/mijnsessies")}
           >
             <View style={styles.kaartIconWrap}>
-              <Ionicons name="folder-open-outline" size={28} color="#FFFFFF" />
+              <Ionicons name="people-outline" size={28} color="#FFFFFF" />
             </View>
             <View style={styles.kaartTextWrap}>
               <Text style={styles.kaartTitel}>Mijn sessies</Text>
-              <Text style={styles.kaartSub}>Bekijke je gejoind sessies</Text>
+              <Text style={styles.kaartSub}>Bekijk je gejoinde sessies</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.kaartGroot}
+            onPress={() => router.push("/geschiedenis")}
+          >
+            <View style={styles.kaartIconWrap}>
+              <Ionicons name="time-outline" size={28} color="#FFFFFF" />
+            </View>
+            <View style={styles.kaartTextWrap}>
+              <Text style={styles.kaartTitel}>Geschiedenis</Text>
+              <Text style={styles.kaartSub}>Bekijk je afgesloten wedstrijden</Text>
             </View>
           </TouchableOpacity>
         </View>

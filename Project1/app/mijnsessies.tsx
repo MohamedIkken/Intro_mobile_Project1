@@ -2,14 +2,16 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, Pre
 import { router } from "expo-router";
 import { Session, useSessionContext } from "./SessionContext";
 import { Ionicons } from "@expo/vector-icons";
-import { auth, db } from "@/firebaseConfig";
+import { auth } from "@/firebaseConfig";
 import { useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
 
 export default function MijnSessies() {
     const { sessions, deleteSession, leaveSession, endSession, getSessionById } = useSessionContext();
     const userId = auth.currentUser?.uid;
-    const [spelers, setSpelers] = useState<{ id: string, name: string }[]>([]);
+    // const [spelers, setSpelers] = useState<{ id: string, name: string }[]>([]);
+
+    const [filterHost, setFilterHost] = useState(false);
+    const [sortDatum, setSortDatum] = useState<"asc" | "desc">("asc");
 
     const [modalConfig, setModalConfig] = useState({
         zichtbaar: false,
@@ -25,7 +27,6 @@ export default function MijnSessies() {
     const [geselecteerdeWinnaar, setGeselecteerdeWinnaar] = useState<string | null>(null);
 
     // Test states om ze zichtbaar te maken
-    const [matchModalZichtbaar, setMatchModalZichtbaar] = useState(false);
     const [practiceModalZichtbaar, setPracticeModalZichtbaar] = useState(false);
 
     // Ik toon de juste form, wanneer moet ik de toon op false zetten? Wanneer ik bevestig of annuleer, dus in beide gevallen
@@ -36,34 +37,8 @@ export default function MijnSessies() {
 
         setTeAfsluitenSessieId(sessionId);
         setGeselecteerdeWinnaar(null);
+        setPracticeModalZichtbaar(true);
 
-        // STAP 1: Haal de echte namen op uit Firebase op basis van de speler ID's
-        const geladenSpelers = [];
-        for (const playerId of s.players) {
-            try {
-                const userRef = doc(db, "users", playerId);
-                const userSnap = await getDoc(userRef);
-                
-                if (userSnap.exists()) {
-                    geladenSpelers.push({
-                        id: playerId, // We hebben het ID nodig voor de berekening later
-                        name: userSnap.data().name || "Onbekende Speler" // Toon de naam in de UI
-                    });
-                }
-            } catch (error) {
-                console.error("Fout bij ophalen speler:", error);
-            }
-        }
-        
-        // Sla ze op in de state
-        setSpelers(geladenSpelers);
-
-        // STAP 2: Open de juiste modal
-        if (s.sessionType === "match") {
-            setMatchModalZichtbaar(true);
-        } else {
-            setPracticeModalZichtbaar(true);
-        }
     }
 
     const bewaarSessieResultaat = async () => {
@@ -75,8 +50,6 @@ export default function MijnSessies() {
         // Roep de nieuwe Firebase logica aan
         await endSession(teAfsluitenSessieId, geselecteerdeWinnaar);
 
-        // Modals sluiten en states resetten
-        setMatchModalZichtbaar(false);
         setPracticeModalZichtbaar(false);
         setTeAfsluitenSessieId(null);
         setGeselecteerdeWinnaar(null);
@@ -125,9 +98,22 @@ export default function MijnSessies() {
         router.push("/dashboard");
     }
 
-    const mijnSessies = sessions.filter((session: Session) =>
-        userId && session.players?.includes(userId)
-    );
+    const mijnSessies = sessions
+        .filter((session: Session) =>
+            userId && session.players?.includes(userId) && session.status === "open"
+        )
+        .filter((session: Session) => filterHost ? session.hostId === userId : true
+        )
+        .sort((a: Session, b: Session) => {
+            const datumA = new Date(`${a.date}T${a.time}`).getTime();
+            const datumB = new Date(`${b.date}T${b.time}`).getTime();
+
+            if (sortDatum === "asc") {
+                return datumA - datumB;
+            } else {
+                return datumB - datumA;
+            }
+        });
 
     return (
         <View style={styles.container}>
@@ -140,9 +126,31 @@ export default function MijnSessies() {
                 <Text style={styles.title}>Mijn Games</Text>
                 <Text style={styles.subtitle}>Je geplande en aangemaakte sessies</Text>
 
+                <View style={styles.filterBalk}>
+                    <TouchableOpacity
+                        style={[styles.filterKnop, filterHost && styles.filterKnopActief]}
+                        onPress={() => setFilterHost(!filterHost)}
+                    >
+                        <Ionicons name={filterHost ? "checkbox" : "square-outline"} size={16} color={filterHost ? "#FFFFFF" : "#8888AA"} />
+                        <Text style={[styles.filterTekst, filterHost && styles.filterTekstActief]}>
+                            Zelf aangemaakt
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.filterKnop}
+                        onPress={() => setSortDatum(sortDatum === "asc" ? "desc" : "asc")}
+                    >
+                        <Ionicons name={sortDatum === "asc" ? "arrow-down-outline" : "arrow-up-outline"} size={16} color="#8888AA" />
+                        <Text style={styles.filterTekst}>
+                            {sortDatum === "asc" ? "Datum (Oplopend)" : "Datum (Aflopend)"}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
                 <View>
                     {mijnSessies.length === 0 ? (
-                        <Text style={styles.emptyText}>Je zit nog niet in een sessie.</Text>
+                        <Text style={styles.emptyText}>Geen sessies gevonden.</Text>
                     ) : (
                         mijnSessies.map((session: Session) => (
                             <View key={session.id} style={styles.card}>
@@ -151,11 +159,6 @@ export default function MijnSessies() {
                                 <View style={styles.cardHeader}>
                                     <Text style={styles.gameTitle}>{session.mapName}</Text>
                                     <View style={styles.badgeContainer}>
-                                        <View style={[styles.badge, session.sessionType === 'match' ? styles.badgeMatch : styles.badgePractice]}>
-                                            <Text style={styles.badgeText}>
-                                                {session.sessionType === 'match' ? 'Match' : 'Practice'}
-                                            </Text>
-                                        </View>
                                         {session.isCompetitive && session.sessionType === 'match' && (
                                             <View style={styles.badgeComp}>
                                                 <Text style={styles.badgeTextComp}>Competitief</Text>
@@ -163,20 +166,19 @@ export default function MijnSessies() {
                                         )}
                                         {session.hostId === userId && (
                                             <View style={styles.badgeHost}>
-                                                <Text style={styles.badgeTextHost}>Host</Text>
+                                                <Text style={styles.badgeTextHost}>Owner</Text>
                                             </View>
                                         )}
 
-                                        {/* --- NIEUW: TEAM BADGE MET ICOON --- */}
-                                        {session.sessionType === 'practice' && userId && (session.teamA?.includes(userId) || session.teamB?.includes(userId)) && (
+                                        {/* team icoon */}
+                                        {userId && (session.teamA?.includes(userId) || session.teamB?.includes(userId)) && (
                                             <View style={styles.badgeTeam}>
                                                 <Ionicons name="flag" size={10} color="#E040FB" style={{ marginRight: 4 }} />
                                                 <Text style={styles.badgeTextTeam}>
-                                                    {session.teamA?.includes(userId) ? "teamA" : "teamB"}
+                                                    {session.teamA?.includes(userId) ? "team A" : "team B"}
                                                 </Text>
                                             </View>
                                         )}
-                                        {/* ----------------------------------- */}
                                     </View>
                                 </View>
 
@@ -215,7 +217,6 @@ export default function MijnSessies() {
                                             <Text style={styles.deleteButtonText}>Verwijder</Text>
                                         </TouchableOpacity>
 
-                                        {/*button voor het afsluiten */}
                                         <TouchableOpacity
                                             style={styles.deleteButton}
                                             onPress={() => handleAfsluiten(session.id)}
@@ -224,6 +225,7 @@ export default function MijnSessies() {
                                         </TouchableOpacity>
 
                                     </View>
+
                                 ) : (
                                     <TouchableOpacity
                                         style={styles.leaveButton}
@@ -260,46 +262,11 @@ export default function MijnSessies() {
                     </View>
                 </Modal>
 
-
-                {/* Modal 1: Match Afsluiten (4 hardcoded spelers) */}
-                <Modal transparent visible={matchModalZichtbaar} animationType="fade">
-                    <View style={styles.modalOverlay}>
-                        <View style={styles.modalKaart}>
-                            <Text style={styles.modalTitel}>Match Afsluiten</Text>
-                            <Text style={styles.modalTekst}>Wie heeft de Battle Royale gewonnen?</Text>
-
-                            <View style={styles.gridContainer}>
-                                {spelers.map((speler) => (
-                                    <TouchableOpacity
-                                        key={speler.id}
-                                        style={[styles.gridBtn, geselecteerdeWinnaar === speler.id && styles.gridBtnActief]}
-                                        onPress={() => setGeselecteerdeWinnaar(speler.id)}
-                                    >
-                                        <Text style={[styles.gridText, geselecteerdeWinnaar === speler.id && styles.gridTextActief]}>
-                                            {speler.name}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-
-                            <View style={styles.modalKnoppen}>
-                                <Pressable style={styles.modalAnnuleer} onPress={() => setMatchModalZichtbaar(false)}>
-                                    <Text style={styles.modalAnnuleerTekst}>Annuleer</Text>
-                                </Pressable>
-                                <Pressable style={[styles.modalBevestig, { backgroundColor: "#4CAF50" }]} onPress={bewaarSessieResultaat}>
-                                    <Text style={styles.modalBevestigTekst}>Opslaan</Text>
-                                </Pressable>
-                            </View>
-                        </View>
-                    </View>
-                </Modal>
-
-
                 {/* Modal 2: Practice Afsluiten (Team A vs Team B) */}
                 <Modal transparent visible={practiceModalZichtbaar} animationType="fade">
                     <View style={styles.modalOverlay}>
                         <View style={styles.modalKaart}>
-                            <Text style={styles.modalTitel}>Practice Afsluiten</Text>
+                            <Text style={styles.modalTitel}>Sessie Afsluiten</Text>
                             <Text style={styles.modalTekst}>Welk team heeft gewonnen?</Text>
 
                             <View style={styles.teamSelectGroup}>
@@ -339,6 +306,36 @@ export default function MijnSessies() {
 }
 
 const styles = StyleSheet.create({
+    filterBalk: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        marginBottom: 16,
+        gap: 10,
+    },
+    filterKnop: {
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#131320",
+        padding: 10,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#1E1E30",
+        gap: 6,
+    },
+    filterKnopActief: {
+        backgroundColor: "rgba(46, 107, 255, 0.15)",
+        borderColor: "#2E6BFF",
+    },
+    filterTekst: {
+        color: "#8888AA",
+        fontSize: 12,
+        fontWeight: "bold",
+    },
+    filterTekstActief: {
+        color: "#FFFFFF",
+    },
     gridContainer: {
         flexDirection: "row",
         flexWrap: "wrap",

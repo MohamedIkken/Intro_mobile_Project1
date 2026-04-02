@@ -36,8 +36,8 @@ export default function MaakSessie() {
 
   const [isCompetitive, setIsCompetitive] = useState(false);
 
-  const [sessionType, setSessionType] = useState("match");
-  const [serverKey, setServerKey] = useState("");
+  // const [sessionType, setSessionType] = useState("match");
+  // const [serverKey, setServerKey] = useState("");
 
   const [toonModal, setToonModal] = useState(false);
 
@@ -47,13 +47,13 @@ export default function MaakSessie() {
       return;
     }
 
-    if (sessionType === "practice" && serverKey === "") {
-      Alert.alert(
-        "Fout",
-        "Een Practice (Privé) sessie heeft een Server Key nodig.",
-      );
-      return;
-    }
+    // if (sessionType === "practice" && serverKey === "") {
+    //   Alert.alert(
+    //     "Fout",
+    //     "Een Practice (Privé) sessie heeft een Server Key nodig.",
+    //   );
+    //   return;
+    // }
 
     if (parseFloat(minLevel) > parseFloat(maxLevel)) {
       Alert.alert("Minimum level kan niet hoger zijn dan maximum level.");
@@ -68,15 +68,18 @@ export default function MaakSessie() {
       minLevel: parseFloat(minLevel),
       maxLevel: parseFloat(maxLevel),
       isCompetitive,
-      sessionType,
+      status: "open",
+      teamA: [auth.currentUser?.uid || "onbekende_host"],
+      teamB: [],
+      sessionType: "match", // Voor nu hardcoded op practice zetten, omdat we match sessies nog niet ondersteunen, dit is een vereenvoudiging
     };
 
-    if (sessionType === "practice") {
-      nieuweSessieData.serverKey = serverKey;
-      nieuweSessieData.status = "open";
-      nieuweSessieData.teamA = [auth.currentUser?.uid || "onbekende_host"];
-      nieuweSessieData.teamB = [];
-    }
+    // if (sessionType === "practice") {
+    // nieuweSessieData.serverKey = serverKey;
+    // nieuweSessieData.status = "open";
+    // nieuweSessieData.teamA = [auth.currentUser?.uid || "onbekende_host"];
+    // nieuweSessieData.teamB = [];
+    //}
 
     // Sessie aanmaken in Firebase en chat aanmaken voor deze sessie
     // Belangrijk: we moeten wachten op het resultaat van addSession voordat we de chat aanmaken, omdat we de sessie-ID nodig hebben voor de chat
@@ -91,6 +94,7 @@ export default function MaakSessie() {
       time: nieuweSessieData.time,
       isCompetitive: nieuweSessieData.isCompetitive,
     });
+
     setToonModal(true);
   };
 
@@ -145,9 +149,9 @@ export default function MaakSessie() {
         <Text style={styles.backButtonText}>Terug</Text>
       </TouchableOpacity>
 
-      <Text style={styles.pageTitle}>Nieuwe Sessie</Text>
+      <Text style={styles.pageTitle}>Nieuwe Sessie (2/2)</Text>
 
-      <Text style={styles.sectionTitle}>WELKE MAP (CLUB)</Text>
+      <Text style={styles.sectionTitle}>WELKE MAP</Text>
       <View style={styles.row}>
         {beschikbareMaps.map((mapOptie) => (
           <TouchableOpacity
@@ -215,13 +219,13 @@ export default function MaakSessie() {
           style={[
             styles.choiceButton,
             isCompetitive === true && styles.choiceButtonSelected,
-            sessionType === "practice" && {
-              opacity: 0.3,
-              borderColor: "#1E1E30",
-            },
+            // sessionType === "practice" && {
+            //   opacity: 0.3,
+            //   borderColor: "#1E1E30",
+            // },
           ]}
           onPress={() => setIsCompetitive(true)}
-          disabled={sessionType === "practice"} // Competitief uitschakelen als practice geselecteerd is
+        // disabled={sessionType === "practice"} // Competitief uitschakelen als practice geselecteerd is
         >
           <Text
             style={[
@@ -249,7 +253,7 @@ export default function MaakSessie() {
           </Text>
         </TouchableOpacity>
       </View>
-
+      {/* 
       <Text style={styles.sectionTitle}>SOORT SESSIE</Text>
       <View style={styles.row}>
         <TouchableOpacity
@@ -287,8 +291,8 @@ export default function MaakSessie() {
             Practice (Privé)
           </Text>
         </TouchableOpacity>
-      </View>
-
+      </View> */}
+      {/* 
       {sessionType === "practice" && (
         <View style={{ marginTop: 10 }}>
           <Text style={styles.sectionTitle}>SERVER KEY (WACHTWOORD)</Text>
@@ -300,7 +304,7 @@ export default function MaakSessie() {
             onChangeText={setServerKey}
           />
         </View>
-      )}
+      )} */}
 
       <Text style={styles.sectionTitle}>NIVEAU (0.5 - 7.0)</Text>
       <View style={styles.row}>
@@ -333,18 +337,24 @@ export default function MaakSessie() {
         <Text style={styles.primaryButtonText}>Sessie Aanmaken</Text>
       </TouchableOpacity>
 
+      {/* --- NIEUW: Verbeterde Succes Modal --- */}
       <Modal transparent visible={toonModal} animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalKaart}>
-            <Text style={styles.modalTitel}>Sessie aangemakt</Text>
-            <Text style={styles.modalTekst}>
-              Druk op ok om naar dashboard terug te keren
-            </Text>
-            <View style={styles.modalKnoppen}>
-              <Pressable style={styles.modalAnnuleer} onPress={navigeerTerug}>
-                <Text style={styles.modalAnnuleerTekst}>Ok</Text>
-              </Pressable>
+
+            <View style={styles.succesIconWrap}>
+              <Ionicons name="checkmark-circle" size={56} color="#4CAF50" />
             </View>
+
+            <Text style={styles.modalTitel}>Sessie aangemaakt!</Text>
+            <Text style={styles.modalTekst}>
+              Je wedstrijd staat nu online en is klaar voor spelers.
+            </Text>
+
+            <Pressable style={styles.succesKnop} onPress={navigeerTerug}>
+              <Text style={styles.succesKnopTekst}>Terug naar dashboard</Text>
+            </Pressable>
+
           </View>
         </View>
       </Modal>
@@ -353,6 +363,25 @@ export default function MaakSessie() {
 }
 
 const styles = StyleSheet.create({
+  // --- NIEUW: Styling voor de succes modal ---
+  succesIconWrap: {
+    marginBottom: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  succesKnop: {
+    backgroundColor: "#2E6BFF", // Playnode blauw
+    paddingVertical: 12,
+    paddingHorizontal: 32, // Bepaalt de breedte op basis van de tekst (niet meer 100%)
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  succesKnopTekst: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+    fontSize: 15,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.85)",
