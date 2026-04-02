@@ -149,6 +149,16 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       await updateDoc(doc(db, "sessions", sessionId), {
         players: arrayRemove(playerId),
       });
+
+      // Speler ook verwijderen uit de bijbehorende chat
+      const chatsRef = collection(db, "chats");
+      const q = query(chatsRef, where("sessionId", "==", sessionId));
+      const chatSnapshots = await getDocs(q);
+      if (!chatSnapshots.empty) {
+        await updateDoc(chatSnapshots.docs[0].ref, {
+          players: arrayRemove(playerId),
+        });
+      }
     } catch (error) {
       console.error("Fout bij het verwijderen van speler uit sessie:", error);
     }

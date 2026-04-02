@@ -9,7 +9,7 @@ import {
   doc,
   updateDoc,
 } from "firebase/firestore";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../context/AuthContext";
 import { fetchPlayerNames } from "./chatHelpers";
 
@@ -39,6 +40,15 @@ export default function ChatMessages() {
   const [playerNames, setPlayerNames] = useState<{ [uid: string]: string }>({});
 
   const { user: currentUser } = useAuth();
+
+  useFocusEffect(
+    useCallback(() => {
+      if (messages.length > 0) {
+        const uniqueSenderIds = Array.from(new Set(messages.map((msg) => msg.senderId)));
+        fetchPlayerNames(uniqueSenderIds, {}).then(setPlayerNames);
+      }
+    }, [messages]),
+  );
 
   const sendMessage = async () => {
     if (!message.trim()) return;
