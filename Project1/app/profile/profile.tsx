@@ -54,7 +54,7 @@ export default function Profile() {
       <View style={styles.glow} />
 
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+        <Ionicons name="chevron-back" size={22} color="#8888AA" />
         <Text style={styles.backButtonText}>Terug</Text>
       </TouchableOpacity>
 
@@ -242,9 +242,9 @@ const styles = StyleSheet.create({
     paddingBottom: 5,
   },
   backButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    color: "#8888AA",
+    fontSize: 14,
     fontWeight: "600",
-    marginLeft: 6,
+    marginLeft: 4,
   },
 });

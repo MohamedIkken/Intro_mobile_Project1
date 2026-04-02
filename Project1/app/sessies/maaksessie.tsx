@@ -8,6 +8,7 @@ import {
   Alert,
   Modal,
   Pressable,
+  SafeAreaView,
 } from "react-native";
 import { useSessionContext, Session } from "../context/SessionContext";
 import { router } from "expo-router";
@@ -140,14 +141,12 @@ export default function MaakSessie() {
   // ... [Je bestaande variabelen en functies blijven exact hetzelfde] ...
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-    >
+    <SafeAreaView style={styles.container}>
       <TouchableOpacity style={styles.backButton} onPress={navigeerTerug}>
         <Ionicons name="chevron-back" size={22} color="#8888AA" />
         <Text style={styles.backButtonText}>Terug</Text>
       </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
 
       <Text style={styles.pageTitle}>Nieuwe Sessie (2/2)</Text>
 
@@ -358,7 +357,8 @@ export default function MaakSessie() {
           </View>
         </View>
       </Modal>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -439,22 +439,23 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: "#0B0B12", // Donkere Playnode achtergrond
+    backgroundColor: "#0B0B12",
   },
   scrollContent: {
     padding: 20,
-    paddingTop: 40,
     paddingBottom: 60,
   },
   backButton: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 5,
   },
   backButtonText: {
     color: "#8888AA",
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 14,
+    fontWeight: "600",
     marginLeft: 4,
   },
   pageTitle: {

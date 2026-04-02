@@ -120,7 +120,7 @@ export default function ServerBoeken() {
       <StatusBar barStyle="light-content" />
 
       <TouchableOpacity style={s.backButton} onPress={navigeerTerug}>
-        <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+        <Ionicons name="chevron-back" size={22} color="#8888AA" />
         <Text style={s.backButtonText}>Terug</Text>
       </TouchableOpacity>
 
@@ -425,10 +425,10 @@ const s = StyleSheet.create({
     paddingBottom: 5,
   },
   backButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    color: "#8888AA",
+    fontSize: 14,
     fontWeight: "600",
-    marginLeft: 6,
+    marginLeft: 4,
   },
 
   header: { marginBottom: 20 },

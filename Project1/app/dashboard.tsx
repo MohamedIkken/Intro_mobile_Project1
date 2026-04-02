@@ -44,7 +44,10 @@ export default function DashboardScreen() {
         if (!data.lastMessageTimestamp) return false;
         const lastRead = data.lastRead?.[user.uid];
         if (!lastRead) return true;
-        return new Date(data.lastMessageTimestamp.toDate()) > new Date(lastRead.toDate());
+        return (
+          new Date(data.lastMessageTimestamp.toDate()) >
+          new Date(lastRead.toDate())
+        );
       });
       setHeeftOngelezen(ongelezen);
     });
@@ -124,7 +127,7 @@ export default function DashboardScreen() {
             </View>
             <View style={styles.kaartTextWrap}>
               <Text style={styles.kaartTitel}>Boeken</Text>
-              <Text style={styles.kaartSub}>Server reserveren</Text>
+              <Text style={styles.kaartSub}>Server boeken</Text>
             </View>
           </TouchableOpacity>
 
@@ -137,7 +140,7 @@ export default function DashboardScreen() {
             </View>
             <View style={styles.kaartTextWrap}>
               <Text style={styles.kaartTitel}>Mijn boekingen</Text>
-              <Text style={styles.kaartSub}>Bekijk je boekingen</Text>
+              <Text style={styles.kaartSub}>Bekijk je server boekingen</Text>
             </View>
           </TouchableOpacity>
 
@@ -150,7 +153,9 @@ export default function DashboardScreen() {
             </View>
             <View style={styles.kaartTextWrap}>
               <Text style={styles.kaartTitel}>Mijn sessies</Text>
-              <Text style={styles.kaartSub}>Bekijk je gejoinde sessies</Text>
+              <Text style={styles.kaartSub}>
+                Bekijk je aangemaakte en gejoinde sessies
+              </Text>
             </View>
           </TouchableOpacity>
 
@@ -163,7 +168,9 @@ export default function DashboardScreen() {
             </View>
             <View style={styles.kaartTextWrap}>
               <Text style={styles.kaartTitel}>Geschiedenis</Text>
-              <Text style={styles.kaartSub}>Bekijk je afgesloten wedstrijden</Text>
+              <Text style={styles.kaartSub}>
+                Bekijk je afgesloten wedstrijden
+              </Text>
             </View>
           </TouchableOpacity>
         </View>

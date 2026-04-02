@@ -74,7 +74,7 @@ export default function MessageDashboard() {
         style={styles.backButton}
         onPress={() => router.back()}
       >
-        <Ionicons name="arrow-back" size={20} color="#8888AA" />
+        <Ionicons name="chevron-back" size={22} color="#8888AA" />
         <Text style={styles.backText}>Terug</Text>
       </TouchableOpacity>
 
