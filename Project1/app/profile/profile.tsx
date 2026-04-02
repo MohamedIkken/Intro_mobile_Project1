@@ -10,13 +10,13 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useState, useEffect } from "react";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../context/AuthContext";
 import { router } from "expo-router";
 import { useFonts, Orbitron_700Bold } from "@expo-google-fonts/orbitron";
 import { Ionicons } from "@expo/vector-icons";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
-import { UserProfile } from "../AuthContext";
+import { UserProfile } from "../context/AuthContext";
 
 export default function Profile() {
   const { user } = useAuth();

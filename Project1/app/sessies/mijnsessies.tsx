@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, Pressable } from "react-native";
 import { router } from "expo-router";
-import { Session, useSessionContext } from "./SessionContext";
+import { Session, useSessionContext } from "./context/SessionContext";
 import { Ionicons } from "@expo/vector-icons";
 import { auth } from "@/firebaseConfig";
 import { useState } from "react";

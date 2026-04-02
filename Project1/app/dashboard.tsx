@@ -11,7 +11,7 @@ import { useFonts, Orbitron_700Bold } from "@expo-google-fonts/orbitron";
 import { ActivityIndicator } from "react-native";
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/firebaseConfig";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "./context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";

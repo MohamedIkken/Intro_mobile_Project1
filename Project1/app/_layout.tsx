@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
-import { AuthProvider } from "./AuthContext";
-import { SessionProvider } from "./SessionContext";
+import { AuthProvider } from "./context/AuthContext";
+import { SessionProvider } from "./context/SessionContext";
 import { BookingProvider } from "./boeking/boekingContext";
 
 const RootLayout = () => {
