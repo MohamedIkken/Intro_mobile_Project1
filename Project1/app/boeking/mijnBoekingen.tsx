@@ -9,7 +9,7 @@ import {
   StyleSheet,
   Modal,
 } from "react-native";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../context/AuthContext";
 import { useEffect, useState } from "react";
 import { fetchMijnBoekingen, annuleerBoeking, markeerAfgerond } from "./boekingService";
 import { Boeking } from "./boekingTypes";

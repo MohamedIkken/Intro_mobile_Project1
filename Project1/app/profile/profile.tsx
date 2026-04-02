@@ -9,12 +9,12 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useState, useCallback } from "react";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../context/AuthContext";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
-import { UserProfile } from "../AuthContext";
+import { UserProfile } from "../context/AuthContext";
 import { useFocusEffect } from "@react-navigation/native";
 
 export default function Profile() {

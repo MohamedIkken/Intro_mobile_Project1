@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useState } from "react";
-import { UserProfile } from "./AuthContext";
+import { UserProfile } from "./context/AuthContext";
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, StatusBar } from "react-native";
 
 export default function RegisterScreen() {

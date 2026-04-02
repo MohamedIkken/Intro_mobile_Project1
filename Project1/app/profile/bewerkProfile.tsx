@@ -18,7 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../context/AuthContext";
 
 export default function BewerkProfile() {
   const { user } = useAuth();

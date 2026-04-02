@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, TextInput } from "react-native";
 import { router } from "expo-router";
-import { Session, useSessionContext } from "./SessionContext";
+import { Session, useSessionContext } from "./context/SessionContext";
 import { Ionicons } from "@expo/vector-icons";
 import { auth } from "@/firebaseConfig";
 import { useState } from "react";
@@ -9,9 +9,8 @@ export default function Wedstrijden() {
     const { sessions, joinSession } = useSessionContext();
     const userId = auth.currentUser?.uid;
 
-    const [wachtwoordModalZichtbaar, setWachtwoordModalZichtbaar] = useState(false);
+    const [joinModalZichtbaar, setJoinModalZichtbaar] = useState(false);
     const [geselecteerdeSessie, setGeselecteerdeSessie] = useState<Session | null>(null);
-    const [ingevoerdeKey, setIngevoerdeKey] = useState("");
     const [gekozenTeam, setGekozenTeam] = useState<'A' | 'B' | null>(null);
 
     // Filter States
@@ -19,14 +18,15 @@ export default function Wedstrijden() {
     const [actieveLocatie, setActieveLocatie] = useState<string>("Alles");
     const [actiefType, setActiefType] = useState<string>("Alles");
 
+    const [succesModalZichtbaar, setSuccesModalZichtbaar] = useState(false);
+
     // Haal dynamisch alle unieke locaties uit de database op
     const uniekeLocaties = ["Alles", ...Array.from(new Set(sessions.map((s: Session) => s.mapName)))];
 
     const voegSpelerToeAanSessies = (sessionId: string, team?: 'A' | 'B') => {
         if (userId) {
             joinSession(sessionId, userId, team);
-            Alert.alert("Succes", "Je doet nu mee aan deze wedstrijd!");
-            router.push("/mijnsessies");
+            setSuccesModalZichtbaar(true);
         }
     };
 
@@ -36,28 +36,21 @@ export default function Wedstrijden() {
             return;
         }
 
-        if (session.sessionType === 'practice') {
-            setGeselecteerdeSessie(session);
-            setIngevoerdeKey("");
-            setGekozenTeam(null);
-            setWachtwoordModalZichtbaar(true);
-            return;
-        }
-
-        voegSpelerToeAanSessies(session.id);
+        setGeselecteerdeSessie(session);
+        setGekozenTeam(null);
+        setJoinModalZichtbaar(true);
     };
 
-    const bevestigWachtwoord = () => {
+    const bevestigDeelname = () => {
         if (!gekozenTeam) {
             Alert.alert("Fout", "Kies eerst een team (A of B).");
             return;
         }
-
-        if (geselecteerdeSessie && ingevoerdeKey === geselecteerdeSessie.serverKey) {
-            setWachtwoordModalZichtbaar(false);
+        if (geselecteerdeSessie && gekozenTeam) {
+            setJoinModalZichtbaar(false);
             voegSpelerToeAanSessies(geselecteerdeSessie.id, gekozenTeam);
         } else {
-            Alert.alert("Fout", "Onjuist wachtwoord.");
+            Alert.alert("Fout", "Kies een team");
         }
     };
 
@@ -65,11 +58,17 @@ export default function Wedstrijden() {
         router.push("/dashboard");
     };
 
+    const gaNaarMijnSessies = () => {
+        setSuccesModalZichtbaar(false);
+        router.push("/mijnsessies");
+    };
+
     const beschikbareSessies = sessions.filter((session: Session) => {
         const zitGebruikerErAlIn = userId && session.players ? session.players.includes(userId) : false;
         const isVol = (session.players?.length || 0) >= 4;
 
         if (zitGebruikerErAlIn || isVol) return false;
+        if (session.status !== "open") return false;
         if (actieveLocatie !== "Alles" && session.mapName !== actieveLocatie) return false;
         if (actiefType === "Competitief" && !session.isCompetitive) return false;
         if (actiefType === "Vriendschappelijk" && session.isCompetitive) return false;
@@ -212,7 +211,7 @@ export default function Wedstrijden() {
             </Modal>
 
             {/* Wachtwoord Modal */}
-            <Modal visible={wachtwoordModalZichtbaar} transparent animationType="fade">
+            <Modal visible={joinModalZichtbaar} transparent animationType="fade">
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Privé Sessie</Text>
@@ -248,29 +247,37 @@ export default function Wedstrijden() {
                             </TouchableOpacity>
                         </View>
 
-                        <TextInput
-                            style={styles.modalInput}
-                            value={ingevoerdeKey}
-                            onChangeText={setIngevoerdeKey}
-                            placeholder="Wachtwoord..."
-                            placeholderTextColor="#444455"
-                            autoCapitalize="none"
-                        />
-
                         <View style={styles.modalButtonGroup}>
                             <TouchableOpacity
                                 style={styles.modalCancelButton}
-                                onPress={() => setWachtwoordModalZichtbaar(false)}
+                                onPress={() => setJoinModalZichtbaar(false)}
                             >
                                 <Text style={styles.modalCancelText}>Annuleren</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.modalSubmitButton}
-                                onPress={bevestigWachtwoord}
+                                onPress={bevestigDeelname}
                             >
                                 <Text style={styles.modalSubmitText}>Bevestigen</Text>
                             </TouchableOpacity>
                         </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Succes Modal */}
+            <Modal transparent visible={succesModalZichtbaar} animationType="fade">
+                <View style={styles.modalOverlay}>
+                    <View style={styles.succesKaart}>
+                        <View style={styles.succesIconWrap}>
+                            <Ionicons name="checkmark-circle" size={56} color="#4CAF50" />
+                        </View>
+                        <Text style={styles.modalTitle}>Succes!</Text>
+                        <Text style={styles.modalSubtitle}>Je doet nu mee aan deze wedstrijd.</Text>
+
+                        <TouchableOpacity style={styles.succesKnop} onPress={gaNaarMijnSessies}>
+                            <Text style={styles.succesKnopTekst}>Ga naar Mijn Sessies</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
@@ -279,6 +286,33 @@ export default function Wedstrijden() {
 }
 
 const styles = StyleSheet.create({
+    succesKaart: {
+        backgroundColor: "#131320",
+        borderRadius: 12,
+        padding: 24,
+        width: "85%",
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: "#1E1E30",
+    },
+    succesIconWrap: {
+        marginBottom: 16,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    succesKnop: {
+        backgroundColor: "#2E6BFF",
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+        alignItems: "center",
+        marginTop: 12,
+    },
+    succesKnopTekst: {
+        color: "#FFFFFF",
+        fontWeight: "bold",
+        fontSize: 16,
+    },
     teamContainer: {
         flexDirection: "row",
         gap: 12,

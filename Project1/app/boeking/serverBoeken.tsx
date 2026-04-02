@@ -13,7 +13,7 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../context/AuthContext";
 import { useBooking } from "./boekingContext";
 import { StyleSheet } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";

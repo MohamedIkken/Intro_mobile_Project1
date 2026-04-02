@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
-import { AuthProvider } from "./AuthContext";
-import { SessionProvider } from "./SessionContext";
+import { AuthProvider } from "./context/AuthContext";
+import { SessionProvider } from "./context/SessionContext";
 import { BookingProvider } from "./boeking/boekingContext";
 
 const RootLayout = () => {
@@ -15,6 +15,8 @@ const RootLayout = () => {
             <Stack.Screen name="maaksessie" options={{ headerShown: false }} />
             <Stack.Screen name="dashboard" options={{ headerShown: false }} />
             <Stack.Screen name="wedstrijden" options={{ headerShown: false }} />
+            <Stack.Screen name="wijzigsessie" options={{ headerShown: false }} />
+            <Stack.Screen name="geschiedenis" options={{ headerShown: false }} />
             <Stack.Screen
               name="boeking/serverBoeken"
               options={{ headerShown: false }}

@@ -19,25 +19,24 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { db } from "../firebaseConfig";
+import { db } from "../../firebaseConfig";
 
-// 1. Definieer het datatype (Voorbereiding op Firebase)
 export interface Session {
   id: string;
-  mapName: string; // Verving 'game' (bijv. "Nuketown")
-  date: string; // YYYY-MM-DD
-  time: string; // HH:MM
-  minLevel: number; // 0.5 tot 7.0
-  maxLevel: number; // 0.5 tot 7.0
-  isCompetitive: boolean; // true = levels aanpassen na match, false = vriendschappelijk
-  sessionType: "match" | "practice"; // 'match' = open voor 4, 'practice' = privé booking
-  players: string[]; // Array met speler-ID's of namen (max 4)
-  hostId: string; // Degene die de match aanmaakte
-  serverKey?: string; // Alleen relevant voor practice sessies, optioneel veld
+  mapName: string; 
+  date: string; 
+  time: string; 
+  minLevel: number; 
+  maxLevel: number;
+  isCompetitive: boolean;
+  sessionType: "match" | "practice"; // nu werken we alleen met matches, maar kan later uitgebreid worden met practice sessies
+  players: string[];
+  hostId: string;
+  winnaar?: string;
   status?: "open" | "voltooid";
   score?: string;
-  teamA?: string[]; // Alleen relevant voor competitieve matches, optioneel veld
-  teamB?: string[]; // Alleen relevant voor competitieve matches, optioneel veld
+  teamA?: string[]; 
+  teamB?: string[];
 }
 
 export const SessionContext = createContext<any>(null);
@@ -155,70 +154,58 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Sessie beeindigen
   const endSession = async (sessionId: string, winnaar: string) => {
     try {
-      // 1. Haal de sessie op om te bepalen wie er meespeelt
       const sessionRef = doc(db, "sessions", sessionId);
       const sessionSnap = await getDoc(sessionRef);
 
       if (!sessionSnap.exists()) return;
 
-      const sessionData = sessionSnap.data() as Session; // wat doet deze regel? ai, geef antwoord: Deze regel haalt de gegevens van het opgehaalde document (de sessie) op en cast het naar het Session type. Het zorgt ervoor dat de data die we uit Firebase krijgen, wordt geïnterpreteerd als een object dat voldoet aan de structuur van het Session interface dat we eerder hebben gedefinieerd. Hierdoor kunnen we later in de code gemakkelijk toegang krijgen tot de eigenschappen van de sessie, zoals players, teamA, teamB, etc., met de juiste types.
-      const isTeamGame = winnaar === "teamA" || winnaar === "teamB";
+      const sessionData = sessionSnap.data() as Session;
 
-      // Ophalen van alle huidige levels
-      const huidigeLevels: Record<string, number> = {};
-      // 2. loop alle spelers en haal hun huidige level op
-      for (const playerId of sessionData.players) {
-        const userRef = doc(db, "users", playerId);
-        const userSnap = await getDoc(userRef);
+      if (sessionData.isCompetitive) {
+        const huidigeLevels: Record<string, number> = {};
 
-        // de spelerlevels record bijwerken
-        if (userSnap.exists())
-          // ik ga ervan dat ik levels opsla als level. maar ik sla nog geen levels en ook maak geen level bij nieuwe gebruikers aan, dat moet gemaakt worden met een default waarde van 2. ai geef jij aantwoord kort: Deze regel controleert of het document van de gebruiker bestaat in de "users" collectie. Als het document bestaat, wordt het level van de gebruiker opgehaald (ervan uitgaande dat het veld 'level' heet) en opgeslagen in de spelerLevels record met de playerId als sleutel. Als er geen level is opgeslagen voor die gebruiker, wordt er een default waarde van 0 gebruikt.
-          huidigeLevels[playerId] = userSnap.data().level || 0; // als er geen level is, default naar 0
-      }
-
-      // Berekenen van nieuwe levels op basis van wie er gewonnen heeft
-      // STAP 2: Berekenen van de nieuwe levels in het geheugen
-      const nieuweLevels: Record<string, number> = {};
-      for (const playerId of sessionData.players) {
-        let isWinner = false;
-
-        if (isTeamGame) {
-          const isInWinningTeamA =
-            winnaar === "teamA" && sessionData.teamA?.includes(playerId);
-          const isInWinningTeamB =
-            winnaar === "teamB" && sessionData.teamB?.includes(playerId);
-          isWinner = Boolean(isInWinningTeamA || isInWinningTeamB);
-        } else {
-          isWinner = winnaar === playerId;
+        for (const playerId of sessionData.players) {
+          const userRef = doc(db, "users", playerId);
+          const userSnap = await getDoc(userRef);
+          // Default naar 2.0 voor nieuwe spelers
+          huidigeLevels[playerId] = userSnap.exists() ? userSnap.data().level || 2.0 : 2.0;
         }
 
-        // Bepaal de punten (+0.15 winst, -0.10 verlies 2v2, -0.05 verlies 1v1v1v1)
-        const levelAanpassing = isWinner ? 0.15 : isTeamGame ? -0.1 : -0.05;
-        let berekendLevel = huidigeLevels[playerId] + levelAanpassing;
+        const nieuweLevels: Record<string, number> = {};
+        for (const playerId of sessionData.players) {
+          let isWinner = false;
 
-        // Zorg dat het tussen 0.5 en 7.0 blijft en rond af op 2 decimalen
-        berekendLevel = Math.max(0.5, Math.min(7.0, berekendLevel));
-        nieuweLevels[playerId] = Math.round(berekendLevel * 100) / 100;
+          // Pure 2v2 logica
+          const isInWinningTeamA = winnaar === "teamA" && sessionData.teamA?.includes(playerId);
+          const isInWinningTeamB = winnaar === "teamB" && sessionData.teamB?.includes(playerId);
+          isWinner = Boolean(isInWinningTeamA || isInWinningTeamB);
+
+          // +0.15 voor winst, -0.10 voor verlies
+          const levelAanpassing = isWinner ? 0.15 : -0.10;
+          let berekendLevel = huidigeLevels[playerId] + levelAanpassing;
+
+          // Zorg dat het tussen 0.5 en 7.0 blijft
+          berekendLevel = Math.max(0.5, Math.min(7.0, berekendLevel));
+          nieuweLevels[playerId] = Math.round(berekendLevel * 100) / 100;
+        }
+
+        for (const playerId of sessionData.players) {
+          await updateDoc(doc(db, "users", playerId), {
+            level: nieuweLevels[playerId],
+          });
+        }
       }
 
-      // STAP 3: Opslaan van alle nieuwe data in Firebase
-      for (const playerId of sessionData.players) {
-        await updateDoc(doc(db, "users", playerId), {
-          level: nieuweLevels[playerId],
-        });
-      }
-
+      // Sla de status EN de winnaar op
       await updateDoc(sessionRef, { status: "voltooid", winnaar: winnaar });
 
-      // Chat ook verwijderen
       const chatsRef = collection(db, "chats");
       const q = query(chatsRef, where("sessionId", "==", sessionId));
       const chatSnapshot = await getDocs(q);
       if (!chatSnapshot.empty) await deleteDoc(chatSnapshot.docs[0].ref);
+
     } catch (error) {
       console.error("Fout bij het beëindigen van sessie:", error);
     }
