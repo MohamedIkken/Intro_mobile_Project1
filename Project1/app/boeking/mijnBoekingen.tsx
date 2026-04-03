@@ -20,7 +20,8 @@ import { formatTijd, formatDatum } from "./formatHelpers";
 export default function MijnBoekingen() {
   const { user } = useAuth();
 
-  const [boekingen, setBoekingen] = useState<Boeking[]>([]);
+  const [actieveBoekingen, setActieveBoekingen] = useState<Boeking[]>([]);
+  const [verlopenBoekingen, setVerlopenBoekingen] = useState<Boeking[]>([]);
   const [loading, setLoading] = useState(true);
   const [annuleerModal, setAnnuleerModal] = useState<string | null>(null);
 
@@ -28,24 +29,32 @@ export default function MijnBoekingen() {
     if (!user) return;
     try {
       const data = await fetchMijnBoekingen(user.uid);
+
       // Verlopen boekingen in Firebase als afgerond markeren
-      const verlopenBoekingen = data.filter(
+      const teMarkeren = data.filter(
         (b) => b.status === "geboekt" && b.eindeTijd < new Date(),
       );
-      await Promise.all(verlopenBoekingen.map((b) => markeerAfgerond(b.id)));
+      await Promise.all(teMarkeren.map((b) => markeerAfgerond(b.id)));
 
-      // Geannuleerde en verlopen boekingen verbergen, verlopen boekingen tonen als afgerond
-      setBoekingen(
-        data
-          .filter((b) => b.status !== "geannuleerd" && b.status !== "afgerond")
-          .sort((a, b) => b.startTijd.getTime() - a.startTijd.getTime())
-          .map((b) => ({
-            ...b,
-            status:
-              b.status === "geboekt" && b.eindeTijd < new Date()
-                ? "afgerond"
-                : b.status,
-          })),
+      // Status lokaal bijwerken voor net-gemarkeerde boekingen
+      const bijgewerkt = data.map((b) => ({
+        ...b,
+        status:
+          b.status === "geboekt" && b.eindeTijd < new Date()
+            ? ("afgerond" as const)
+            : b.status,
+      }));
+
+      // Splits in actief en verlopen
+      setActieveBoekingen(
+        bijgewerkt
+          .filter((b) => b.status === "geboekt")
+          .sort((a, b) => a.startTijd.getTime() - b.startTijd.getTime()),
+      );
+      setVerlopenBoekingen(
+        bijgewerkt
+          .filter((b) => b.status === "afgerond" || b.status === "geannuleerd")
+          .sort((a, b) => b.startTijd.getTime() - a.startTijd.getTime()),
       );
     } catch (error) {
       console.error("Fout bij het laden van boekingen:", error);
@@ -56,6 +65,13 @@ export default function MijnBoekingen() {
 
   useEffect(() => {
     loadBoekingen();
+
+    // Herlaad elke 30 seconden zodat verlopen boekingen live verplaatst worden
+    const interval = setInterval(() => {
+      loadBoekingen();
+    }, 30_000);
+
+    return () => clearInterval(interval);
   }, [user]);
 
   const handleAnnuleer = async () => {
@@ -89,56 +105,100 @@ export default function MijnBoekingen() {
 
         {loading ? (
           <ActivityIndicator color="#2E6BFF" style={{ marginVertical: 40 }} />
-        ) : boekingen.length === 0 ? (
+        ) : actieveBoekingen.length === 0 && verlopenBoekingen.length === 0 ? (
           <Text style={s.leegTekst}>Je hebt geen boekingen.</Text>
         ) : (
-          boekingen.map((boeking) => (
-            <View key={boeking.id} style={s.kaart}>
-              <View style={s.kaartHeader}>
-                <View style={s.kaartIconWrap}>
-                  <Ionicons name="server-outline" size={20} color="#FFFFFF" />
-                </View>
-                <Text style={s.serverNaam}>{boeking.serverNaam}</Text>
-                <View
-                  style={[
-                    s.statusBadge,
-                    boeking.status === "geannuleerd" && s.statusGeannuleerd,
-                    boeking.status === "afgerond" && s.statusAfgerond,
-                  ]}
-                >
-                  <Text style={s.statusTekst}>{boeking.status}</Text>
-                </View>
-              </View>
+          <>
+            {actieveBoekingen.length > 0 && (
+              <>
+                <Text style={s.sectieTitel}>Actief</Text>
+                {actieveBoekingen.map((boeking) => (
+                  <View key={boeking.id} style={s.kaart}>
+                    <View style={s.kaartHeader}>
+                      <View style={s.kaartIconWrap}>
+                        <Ionicons name="server-outline" size={20} color="#FFFFFF" />
+                      </View>
+                      <Text style={s.serverNaam}>{boeking.serverNaam}</Text>
+                      <View style={s.statusBadge}>
+                        <Text style={s.statusTekst}>{boeking.status}</Text>
+                      </View>
+                    </View>
+                    <View style={s.kaartDetails}>
+                      <View style={s.detailRij}>
+                        <Text style={s.detailLabel}>Datum</Text>
+                        <Text style={s.detailWaarde}>
+                          {formatDatum(boeking.startTijd)}
+                        </Text>
+                      </View>
+                      <View style={s.detailRij}>
+                        <Text style={s.detailLabel}>Tijd</Text>
+                        <Text style={s.detailWaarde}>
+                          {formatTijd(boeking.startTijd)} –{" "}
+                          {formatTijd(boeking.eindeTijd)}
+                        </Text>
+                      </View>
+                      <View style={[s.detailRij, { borderBottomWidth: 0 }]}>
+                        <Text style={s.detailLabel}>Doel</Text>
+                        <Text style={s.detailWaarde}>{boeking.doel}</Text>
+                      </View>
+                    </View>
+                    <TouchableOpacity
+                      style={s.annuleerKnop}
+                      onPress={() => setAnnuleerModal(boeking.id)}
+                    >
+                      <Text style={s.annuleerTekst}>Boeking annuleren</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </>
+            )}
 
-              <View style={s.kaartDetails}>
-                <View style={s.detailRij}>
-                  <Text style={s.detailLabel}>Datum</Text>
-                  <Text style={s.detailWaarde}>
-                    {formatDatum(boeking.startTijd)}
-                  </Text>
-                </View>
-                <View style={s.detailRij}>
-                  <Text style={s.detailLabel}>Tijd</Text>
-                  <Text style={s.detailWaarde}>
-                    {formatTijd(boeking.startTijd)} –{" "}
-                    {formatTijd(boeking.eindeTijd)}
-                  </Text>
-                </View>
-                <View style={[s.detailRij, { borderBottomWidth: 0 }]}>
-                  <Text style={s.detailLabel}>Doel</Text>
-                  <Text style={s.detailWaarde}>{boeking.doel}</Text>
-                </View>
-              </View>
-              {boeking.status === "geboekt" && (
-                <TouchableOpacity
-                  style={s.annuleerKnop}
-                  onPress={() => setAnnuleerModal(boeking.id)}
-                >
-                  <Text style={s.annuleerTekst}>Boeking annuleren</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          ))
+            {verlopenBoekingen.length > 0 && (
+              <>
+                <Text style={s.sectieTitel}>Geschiedenis</Text>
+                {verlopenBoekingen.map((boeking) => (
+                  <View key={boeking.id} style={[s.kaart, s.kaartVerlopen]}>
+                    <View style={s.kaartHeader}>
+                      <View style={[s.kaartIconWrap, s.kaartIconWrapVerlopen]}>
+                        <Ionicons name="server-outline" size={20} color="#8888AA" />
+                      </View>
+                      <Text style={[s.serverNaam, s.serverNaamVerlopen]}>
+                        {boeking.serverNaam}
+                      </Text>
+                      <View
+                        style={[
+                          s.statusBadge,
+                          boeking.status === "geannuleerd" && s.statusGeannuleerd,
+                          boeking.status === "afgerond" && s.statusAfgerond,
+                        ]}
+                      >
+                        <Text style={s.statusTekst}>{boeking.status}</Text>
+                      </View>
+                    </View>
+                    <View style={s.kaartDetails}>
+                      <View style={s.detailRij}>
+                        <Text style={s.detailLabel}>Datum</Text>
+                        <Text style={s.detailWaarde}>
+                          {formatDatum(boeking.startTijd)}
+                        </Text>
+                      </View>
+                      <View style={s.detailRij}>
+                        <Text style={s.detailLabel}>Tijd</Text>
+                        <Text style={s.detailWaarde}>
+                          {formatTijd(boeking.startTijd)} –{" "}
+                          {formatTijd(boeking.eindeTijd)}
+                        </Text>
+                      </View>
+                      <View style={[s.detailRij, { borderBottomWidth: 0 }]}>
+                        <Text style={s.detailLabel}>Doel</Text>
+                        <Text style={s.detailWaarde}>{boeking.doel}</Text>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </>
+            )}
+          </>
         )}
       </ScrollView>
 
@@ -186,6 +246,16 @@ const s = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     marginLeft: 4,
+  },
+
+  sectieTitel: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#8888AA",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginBottom: 10,
+    marginTop: 8,
   },
 
   header: { marginBottom: 20 },
@@ -247,6 +317,16 @@ const s = StyleSheet.create({
   },
   statusAfgerond: {
     backgroundColor: "rgba(74, 222, 128, 0.15)",
+  },
+
+  kaartVerlopen: {
+    opacity: 0.6,
+  },
+  kaartIconWrapVerlopen: {
+    backgroundColor: "#1A1A28",
+  },
+  serverNaamVerlopen: {
+    color: "#8888AA",
   },
   statusTekst: {
     fontSize: 10,

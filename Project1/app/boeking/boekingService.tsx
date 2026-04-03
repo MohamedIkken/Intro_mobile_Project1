@@ -137,3 +137,17 @@ export const fetchMijnBoekingen = async (userId: string): Promise<Boeking[]> => 
   const mijnBoekingenSnap = await getDocs(q);
   return mijnBoekingenSnap.docs.map((doc) => mapToBoeking(doc.id, doc.data()));
 };
+
+// Markeer alle verlopen "geboekt" boekingen van een gebruiker als "afgerond"
+export const markeerVerlopenBoekingen = async (userId: string): Promise<number> => {
+  const q = query(
+    boekingenRef,
+    where("userId", "==", userId),
+    where("status", "==", "geboekt"),
+  );
+  const snap = await getDocs(q);
+  const nu = new Date();
+  const verlopen = snap.docs.filter((d) => toDate(d.data().eindeTijd) < nu);
+  await Promise.all(verlopen.map((d) => markeerAfgerond(d.id)));
+  return verlopen.length;
+};

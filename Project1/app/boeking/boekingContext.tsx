@@ -3,11 +3,17 @@ import {
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useState,
 } from "react";
 import { zoekFilters, Slot, Boeking } from "./boekingTypes";
 import { berekenBeschikbareSlots } from "./slotService";
-import { fetchBoekingen, maakBoeking } from "./boekingService";
+import {
+  fetchBoekingen,
+  maakBoeking,
+  markeerVerlopenBoekingen,
+} from "./boekingService";
+import { useAuth } from "../context/AuthContext";
 
 interface boekingState {
   filters: zoekFilters;
@@ -41,8 +47,25 @@ const defaultState: boekingState = {
 
 const BookingContext = createContext<boekingContextValue | null>(null);
 
+const CLEANUP_INTERVAL = 60_000;
+
 export function BookingProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<boekingState>(defaultState);
+  const { user } = useAuth();
+
+  // Achtergrond-cleanup: markeer verlopen boekingen automatisch als afgerond
+  useEffect(() => {
+    if (!user) return;
+
+    // Direct bij mount uitvoeren
+    markeerVerlopenBoekingen(user.uid).catch(console.error);
+
+    const interval = setInterval(() => {
+      markeerVerlopenBoekingen(user.uid).catch(console.error);
+    }, CLEANUP_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   const setFilters = useCallback((nieuweFilters: Partial<zoekFilters>) => {
     setState((prev) => ({
